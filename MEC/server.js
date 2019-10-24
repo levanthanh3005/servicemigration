@@ -23,32 +23,32 @@ app.post('/start', function (req, res) {
       ports : [{pC :<>, pH : <>}],
       network : network,
       serviceName : optional
-      filename : <filename> (in case of load)
+      fileName : <fileName> (in case of load)
     }
   */
 
-  var filename = req.body.filename;
+  var fileName = req.body.fileName;
+  var DockerImage = req.body.DockerImage;
 
   var executeToLoadImage = function(callback) {
-    if (!filename) {
+    if (!fileName) {
       callback();
       return;
     }
-    var cmd = "docker load -i /tmp/"+filename;
+    var cmd = "docker load -i /tmp/"+fileName;
     extras.execute(cmd, function(stdout) {
       callback();
     })
   }
   var executeToStart = function() {
     console.log(req.body);
-    var DockerImage = req.body.DockerImage;
     var lsEnv = req.body.env;
     var lsPorts = req.body.ports;
     var serviceName = req.body.serviceName;
     var network = req.body.network;
     var command = req.body.command;
 
-
+    command = command ? command : "";
 
     serviceName = serviceName ? serviceName : new Date().getTime();
 
@@ -154,27 +154,15 @@ app.post('/internalmigration', function (req, res) {
   var fileName = req.body.fileName;
   var newIP = req.body.newIP;
 
-  fileName = fileName ? fileName : new Date().getTime()+".tar";
+  var newServiceName = serviceName + new Date().getTime();
 
-  var cmd = "docker export -o "+fileName+" "+serviceName;
+  fileName = fileName ? fileName : new Date().getTime()+".gz";
 
-  console.log("Run:"+cmd);
+  var commitImage = function(callback) {
+    cmd = "docker commit "+serviceName+" "+newServiceName;
 
-  extras.execute(cmd, function(stdout,error) {
-
-    if (error !== null) {
-      res.send({
-        code : 0,
-        description : error
-      });  
-      return;
-    }
-
-    console.log("Save "+serviceName); 
-
-    cmd = "scp "+fileName+" "+newIP+":/tmp";
     extras.execute(cmd, function(stdout,error) {
-      console.log("copy to "+newIP); 
+      console.log("commit to "+newServiceName); 
 
       if (error !== null) {
         res.send({
@@ -184,12 +172,50 @@ app.post('/internalmigration', function (req, res) {
         return;
       }
 
-      res.send({
-        code : 1,
-        fileName: fileName
-      });  
+      callback();
+
     })
-  })
+  }
+
+  var sendCommitFile = function(){
+    var cmd = "docker save -o "+fileName+" "+newServiceName;
+
+    console.log("Run:"+cmd);
+
+    extras.execute(cmd, function(stdout,error) {
+
+      if (error !== null) {
+        res.send({
+          code : 0,
+          description : error
+        });  
+        return;
+      }
+
+      console.log("Save "+newServiceName); 
+
+      cmd = "scp "+fileName+" "+newIP+":/tmp";
+      extras.execute(cmd, function(stdout,error) {
+        console.log("copy to "+newIP); 
+
+        if (error !== null) {
+          res.send({
+            code : 0,
+            description : error
+          });  
+          return;
+        }
+
+        res.send({
+          code : 1,
+          fileName: fileName,
+          serviceName : newServiceName
+        });  
+      })
+    })
+  }
+
+  commitImage(sendCommitFile);
 })
 
 app.get('/cleanall', function (req, res) {
@@ -220,45 +246,44 @@ app.get('/reboot', function (req, res) {
 
 app.get('/test', function (req, res) {
   res.send("done");
-  request.post('http://localhost:3000/start', {
-    json: {
-      DockerImage : "busybox",
-      serviceName : "looper",
-      command : "/bin/sh -c 'i=0; while true; do echo $i; i=$(expr $i + 1); sleep 1; done'"
-    }
-  }, (error, res, body) => {
-    if (error) {
-      console.error(error)
-      return
-    }
-    console.log(`statusCode: ${res.statusCode}`)
-    console.log(body)
+  // request.post('http://localhost:3000/start', {
+  //   json: {
+  //     DockerImage : "busyboxtest",
+  //     serviceName : "looper"
+  //   }
+  // }, (error, res, body) => {
+  //   if (error) {
+  //     console.error(error)
+  //     return
+  //   }
+  //   console.log(`statusCode: ${res.statusCode}`)
+  //   console.log(body)
 
 
     request.post('http://localhost:3000/internalmigration', {
       json: {
         serviceName : "looper",
-        newIP : "0.0.0.0"
+        newIP : "vanle@10.7.20.89"
       }
     }, (error, res, body) => {
         console.log("After copy");
         console.log(body);
-        // request.post('http://localhost:3000/start', {
-        //   json: {
-        //     DockerImage : "busybox",
-        //     serviceName : "looper",
-        //     command : "/bin/sh -c 'i=0; while true; do echo $i; i=$(expr $i + 1); sleep 1; done'"
-        //   }
-        // }, (error, res, body) => {
+        request.post('http://10.7.20.89:3005/start', {
+          json: {
+            DockerImage : body.serviceName,
+            serviceName : "looper",
+            fileName : body.fileName
+          }
+        }, (error, res, body) => {
 
           
           
-        // })
+        })
 
     })
 
 
-  })
+  // })
 })
 
 app.listen(port, function () {

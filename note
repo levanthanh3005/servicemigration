@@ -22,6 +22,25 @@ docker run -it --rm \
 docker run -it --rm \
 	-v /Users/vanthanhle/Desktop/Tools/ServiceMigration:/todo \
 	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /tmp:/tmp \
 	-w /todo \
 	-p 3000:3000 \
 	levanthanh3005/dockernode:v0.1 sh
+
+
+docker run -it --rm \
+	-v /home/academic/vanle/servicemigration:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /tmp:/tmp \
+	-w /todo \
+	-p 3005:3000 \
+	levanthanh3005/dockernode:v0.1 sh
+
+
+docker export NAME | gzip > NAME.gz
+
+
+docker import -i /tmp/1571921200484.tar
+
+zcat /tmp/1571922675746.gz | docker import - looper
+
