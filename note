@@ -37,12 +37,11 @@ docker run -it --rm \
 	levanthanh3005/dockernode:v0.1 sh
 
 
-
-
-for ssh:
-ssh-keygen
-ssh-copy-id -i ~/.ssh/id_rsa.pub vanle@10.7.20.89
-ssh-add
-
-
-ssh vanle@10.7.20.89
+Todo:
+- Test the code of server works or not
+- make ssh without password in macos
+- make criu run on macos: 
+https://github.com/boucher/criu-for-mac/blob/master/Dockerfile
+- make a proxy like haproxy to configure the request from user, so when the user change node, the request change as well, use one server for all request, extend the code of dockercloud/haproxy
+- make service manager to control request come and out
+- simulate the roaming by make the response delay

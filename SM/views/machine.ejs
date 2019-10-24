@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300' rel='stylesheet' type='text/css'>
+  </head>
+  <body>
+    <div class="container">
+      <h1><%= notePosition %></h1>
+      <h3>List of running containers</h3>
+      <table style="width:100%" id="t01">
+        <tr>
+          <th>Id</th>
+          <th>Images</th>
+          <th>IP Address</th>
+          <th>Action</th>
+          <th>Detail</th>
+        </tr>
+        <% for(s in runningContainers) {%>
+        <tr>
+          <td><%= runningContainers[s].id %></td>
+          <td><%= runningContainers[s].image %></td>
+          <td><%= runningContainers[s].ip %></td>
+          <td><a href=<%= "/machine/stop_container/"+runningContainers[s].id %>>Stop</a></td>
+          <td><a href=<%= "/logs/container/container/"+ runningContainers[s].id %>>Detail</a></td>
+        </tr>
+        <% } %>
+      </table> 
+      <br/>
+      <h3>List of provided link</h3>
+      <table style="width:100%" id="t01">
+        <tr>
+          <th>Link</th>
+          <th>Container name</th>
+        </tr>
+        <% for(s in LinkList) {%>
+        <tr>
+          <td><%= s %></td>
+          <td><%= LinkList[s].name %></td>
+        </tr>
+        <% } %>
+      </table> 
+    </div>
+    <div><a href=<%= "/clean" %>>Clean everything</a></div>
+    <div>-------------------PLEASE PAY ATTENTION TO REBOOT--------------------------<a href=<%= "/reboot" %>>Reboot</a></div>
+  </body>
+</html>

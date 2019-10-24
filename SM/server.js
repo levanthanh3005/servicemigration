@@ -4,9 +4,6 @@ const extras = require('../extras');
 const bodyParser = require('body-parser');
 const request = require('request');
 
-var path = require('path');
-var fs = require('fs');
-
 var port = process.env.PORT || 3000;
 
 const app = express()
@@ -94,7 +91,7 @@ function startWithCheckpoint(req,res) {
 
           res.send({
             code : 1,
-            description : "Service "+req.body.serviceName+" start at "+req.body.checkpoint
+            description : "Service "+req.body.serviceName+" start at "+req.body.checkpoint;
           });  
 
         });
@@ -282,33 +279,25 @@ app.post('/migration', function (req, res) {
   }
 
   var postCommitFile = function(checkpoint){
-    var filename = "/tmp/"+checkpoint+".tar.gz";
+    var cmd = "scp /tmp/"+checkpoint+".tar.gz "+newIP+":/tmp";
+    extras.execute(cmd, function(stdout,error) {
+      console.log("copy to "+newIP); 
 
-    var rs = fs.createReadStream(filename);
-    var ws = request.post(pathPost+"/"+checkpoint);
+      if (error !== null) {
+        res.send({
+          code : 0,
+          description : error
+        });  
+        return;
+      }
 
-    ws.on('drain', function () {
-      console.log('drain', new Date());
-      rs.resume();
-    });
-
-    rs.on('end', function () {
-      console.log('uploaded to ' + pathPost);
       res.send({
         code : 1,
-        description : "uploaded"
+        fileName: fileName,
+        serviceName : newServiceName
       });  
-    });
+    })
 
-    ws.on('error', function (err) {
-      console.error('cannot send file to ' + pathPost + ': ' + err);
-      res.send({
-        code : 0,
-        description : err
-      });  
-    });
-
-    rs.pipe(ws);
   }
 
   makeCheckpoint(function(checkpoint){
@@ -321,22 +310,6 @@ app.post('/migration', function (req, res) {
     })
   });
 })
-
-app.post('/uploadcheckpoint/:checkpoint', function (req, res) {
-  var checkpoint = path.basename(req.params.checkpoint);
-  
-  filename = "/tmp/"+checkpoint+".tar.gz";
-
-  var dst = fs.createWriteStream(filename);
-  req.pipe(dst);
-  dst.on('drain', function() {
-    console.log('drain', new Date());
-    req.resume();
-  });
-  req.on('end', function () {
-    res.send(200);
-  });
-});
 
 app.get('/cleanall', function (req, res) {
   //localhost:3000/setNote/Italy
@@ -380,10 +353,10 @@ app.get('/test', function (req, res) {
     console.log(body)
 
 
-    request.post('http://localhost:3000/migration', {
+    request.post('http://localhost:3000/internalmigration', {
       json: {
         serviceName : "looper",
-        pathPost : "http://10.7.20.89/uploadcheckpoint"
+        newIP : "vanle@10.7.20.89"
       }
     }, (error, res, body) => {
         console.log("After copy");
