@@ -1,0 +1,27 @@
+Questions:
+1) Whether the ongoing service should be migrated out of the current edge server that hosts this service
+2) if the answer is yes, then which edge server the service should be migrated to
+3)How the service migration process should be carried out, considering the overhead and QoS requirement
+
+https://mirror.kumi.systems/videolan/vlc/3.0.8/vlc-3.0.8.tar.xz
+
+
+todo:
+- MEC start
+- MEC stop
+- MEC migration : 
+++ local migration: move locally
+++ external migration: submit to service manager to pull the file
+
+docker run -it --rm \
+	-v /Users/vanthanhle/Desktop/Tools/ServiceMigration:/todo \
+	-w /todo \
+	node sh
+
+
+docker run -it --rm \
+	-v /Users/vanthanhle/Desktop/Tools/ServiceMigration:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-w /todo \
+	-p 3000:3000 \
+	levanthanh3005/dockernode:v0.1 sh
