@@ -23,93 +23,154 @@ app.post('/start', function (req, res) {
       ports : [{pC :<>, pH : <>}],
       network : network,
       serviceName : optional
-      fileName : <fileName> (in case of load)
+      checkpoint : checkpoint name (in case of load)
     }
   */
 
-  var fileName = req.body.fileName;
-  var DockerImage = req.body.DockerImage;
-
-  var executeToLoadImage = function(callback) {
-    if (!fileName) {
-      callback();
-      return;
-    }
-    var cmd = "docker load -i /tmp/"+fileName;
-    extras.execute(cmd, function(stdout) {
-      callback();
-    })
-  }
-  var executeToStart = function() {
-    console.log(req.body);
-    var lsEnv = req.body.env;
-    var lsPorts = req.body.ports;
-    var serviceName = req.body.serviceName;
-    var network = req.body.network;
-    var command = req.body.command;
-
-    command = command ? command : "";
-
-    serviceName = serviceName ? serviceName : new Date().getTime();
-
-    network = network ? " --network "+network : "";
-
-    var ports = "";
-    for (var e in lsPorts){
-      ports+= " -p "+lsPorts[e].pC+":"+lsPorts[e].pH;
-    }
-
-    var cmd = "docker run -i --rm --name "+serviceName+network+ports+" "+DockerImage+" "+command;
-    console.log("Run:"+cmd);
-
-
-    extras.execute(cmd, function(stdout) {
-      maxRq = 100;
-      checkRequest = function(callback) {
-        console.log("Check ip exist");
-        if (maxRq == -1) {
-          return;
-        } else if (maxRq == 0) {
-          // console.log("Maybe it has problem");
-          res.send({
-            code : 0,
-            description: "Try "+maxRq+" but not executed"
-          });
-        } else {
-          var getIpCmd = "docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "+serviceName;
-          extras.execute(getIpCmd, function(stdout) 
-          {
-            myIp = stdout.trim();
-            // myIp = serverIp;
-            maxRq--;
-            // console.log("Get ip:"+myIp+" "+myIp.length);
-            //setMovie file
-            if (myIp.length == 0) {
-              callback();
-              return;
-            } else {
-              res.send({
-                code : 1,
-                ip : myIp,
-                description: "container started"
-              });          
-            }
-          });
-        }
-      }
-
-      callRequest = function(){
-        timeout = setTimeout(function(){
-          checkRequest(callRequest);
-        },1000);
-      }
-      checkRequest(callRequest);
-      }, true);
+  if (req.body.checkpoint) {
+    startWithCheckpoint(req,res);
+  } else {
+    normalStart(req,"run",function(results){
+        res.send(results);
+    }); 
   }
 
-  executeToLoadImage(executeToStart);
 })
 
+function startWithCheckpoint(req,res) {
+  //Ref: https://www.criu.org/Docker
+  //docker create
+  //get container id
+  //unzip file from /tmp/checkpoint.tar.gz to 
+  //  /var/lib/docker/containers/<container-ID>/checkpoints/<checkpoint name>/
+  //docker start --checkpoint=<checkpoint name> container-name
+  var getContainerId = function(callback){
+    var cmd = 'docker inspect --format="{{.Id}}" '+req.body.serviceName;
+    extras.execute(cmd, function(stdout, error) {
+      if (error !== null) {
+        res.send({
+          code : 0,
+          description : error
+        });  
+        return;
+      }
+      var containerId = stdout.trim();
+
+      callback(containerId);
+    });
+  }
+
+  var extractCheckpoint = function(containerId, callback){
+    var checkpoint = req.checkpoint;
+    var cmd = "tar -xf file_name.tar -C /var/lib/docker/containers/"+containerId+"/checkpoints/";
+
+    extras.execute(cmd, function(stdout, error) {
+      if (error !== null) {
+        res.send({
+          code : 0,
+          description : error
+        });  
+        return;
+      }
+      callback();
+    });
+  }
+
+  normalStart(req,"create",function(){
+    getContainerId(function(containerId){
+      extractCheckpoint(function(){
+        var cmd = "docker start --checkpoint="+req.body.checkpoint+" "+req.body.serviceName;
+        extras.execute(cmd, function(stdout, error) {
+          if (error !== null) {
+            res.send({
+              code : 0,
+              description : error
+            });  
+            return;
+          }
+
+          res.send({
+            code : 1,
+            description : "Service "+req.body.serviceName+" start at "+req.body.checkpoint;
+          });  
+
+        });
+      })
+    })
+  });
+
+}
+
+function normalStart(req, fn, startcallback) {
+  //fn = undefine => docker run
+  //fn = "create" => create;
+  console.log(req.body);
+  var lsEnv = req.body.env;
+  var lsPorts = req.body.ports;
+  var serviceName = req.body.serviceName;
+  var network = req.body.network;
+  var command = req.body.command;
+  var DockerImage = req.body.DockerImage;
+
+
+  command = command ? command : "";
+
+  serviceName = serviceName ? serviceName : new Date().getTime();
+
+  network = network ? " --network "+network : "";
+
+  var ports = "";
+  for (var e in lsPorts){
+    ports+= " -p "+lsPorts[e].pC+":"+lsPorts[e].pH;
+  }
+
+  var cmd = "docker "+fn+" -i --rm --name "+serviceName+network+ports+" "+DockerImage+" "+command;
+
+  console.log("Run:"+cmd);
+
+
+  extras.execute(cmd, function(stdout) {
+    maxRq = 100;
+    checkRequest = function(rqcallback) {
+      console.log("Check ip exist");
+      if (maxRq == -1) {
+        return;
+      } else if (maxRq == 0) {
+        // console.log("Maybe it has problem");
+        startcallback({
+          code : 0,
+          description: "Try "+maxRq+" but not executed"
+        });
+      } else {
+        var getIpCmd = "docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "+serviceName;
+        extras.execute(getIpCmd, function(stdout) {
+          myIp = stdout.trim();
+          // myIp = serverIp;
+          maxRq--;
+          // console.log("Get ip:"+myIp+" "+myIp.length);
+          //setMovie file
+          if (myIp.length == 0) {
+            rqcallback();
+            return;
+          } else {
+            startcallback({
+              code : 1,
+              ip : myIp,
+              description: "container started"
+            });          
+          }
+        });
+      }
+    }
+
+    callRequest = function(){
+      timeout = setTimeout(function(){
+        checkRequest(callRequest);
+      },1000);
+    }
+    checkRequest(callRequest);
+    }, true);
+}
 
 app.post('/stop', function (req, res) {
   
@@ -144,25 +205,22 @@ app.post('/internalmigration', function (req, res) {
   /*
     Post {
       serviceName : <serviceName>,
-      fileName : <fileName>,
       newIP : <newIP>
     }
   */
 
   console.log(req.body);
   var serviceName = req.body.serviceName;
-  var fileName = req.body.fileName;
   var newIP = req.body.newIP;
 
-  var newServiceName = serviceName + new Date().getTime();
+  var checkpoint = "cp" + new Date().getTime();
 
-  fileName = fileName ? fileName : new Date().getTime()+".gz";
 
-  var commitImage = function(callback) {
-    cmd = "docker commit "+serviceName+" "+newServiceName;
+  var makeCheckpoint = function(callback) {
+    cmd = "docker checkpoint create --checkpoint-dir /tmp "+serviceName+" "+checkpoint;
 
     extras.execute(cmd, function(stdout,error) {
-      console.log("commit to "+newServiceName); 
+      console.log("checkpoint "+checkpoint); 
 
       if (error !== null) {
         res.send({
@@ -172,17 +230,16 @@ app.post('/internalmigration', function (req, res) {
         return;
       }
 
-      callback();
+      callback(checkpoint);
 
     })
   }
 
-  var sendCommitFile = function(){
-    var cmd = "docker save -o "+fileName+" "+newServiceName;
-
-    console.log("Run:"+cmd);
+  var zipCheckpoint = function(checkpoint){
+    cmd = "tar -zcvf /tmp/"+checkpoint+".tar.gz /tmp/"+checkpoint;
 
     extras.execute(cmd, function(stdout,error) {
+      console.log("zip checkpoint into file :"+checkpoint); 
 
       if (error !== null) {
         res.send({
@@ -192,30 +249,38 @@ app.post('/internalmigration', function (req, res) {
         return;
       }
 
-      console.log("Save "+newServiceName); 
+      callback(checkpoint);
 
-      cmd = "scp "+fileName+" "+newIP+":/tmp";
-      extras.execute(cmd, function(stdout,error) {
-        console.log("copy to "+newIP); 
-
-        if (error !== null) {
-          res.send({
-            code : 0,
-            description : error
-          });  
-          return;
-        }
-
-        res.send({
-          code : 1,
-          fileName: fileName,
-          serviceName : newServiceName
-        });  
-      })
     })
   }
 
-  commitImage(sendCommitFile);
+  var sendCommitFile = function(checkpoint){
+    var cmd = "scp /tmp/"+checkpoint+".tar.gz "+newIP+":/tmp";
+    extras.execute(cmd, function(stdout,error) {
+      console.log("copy to "+newIP); 
+
+      if (error !== null) {
+        res.send({
+          code : 0,
+          description : error
+        });  
+        return;
+      }
+
+      res.send({
+        code : 1,
+        fileName: fileName,
+        serviceName : newServiceName
+      });  
+    })
+
+  }
+
+  makeCheckpoint(function(checkpoint){
+    zipCheckpoint(function(checkpoint){
+      sendCommitFile();
+    })
+  });
 })
 
 app.get('/cleanall', function (req, res) {
@@ -246,18 +311,18 @@ app.get('/reboot', function (req, res) {
 
 app.get('/test', function (req, res) {
   res.send("done");
-  // request.post('http://localhost:3000/start', {
-  //   json: {
-  //     DockerImage : "busyboxtest",
-  //     serviceName : "looper"
-  //   }
-  // }, (error, res, body) => {
-  //   if (error) {
-  //     console.error(error)
-  //     return
-  //   }
-  //   console.log(`statusCode: ${res.statusCode}`)
-  //   console.log(body)
+  request.post('http://localhost:3000/start', {
+    json: {
+      DockerImage : "busyboxtest",
+      serviceName : "looper"
+    }
+  }, (error, res, body) => {
+    if (error) {
+      console.error(error)
+      return
+    }
+    console.log(`statusCode: ${res.statusCode}`)
+    console.log(body)
 
 
     request.post('http://localhost:3000/internalmigration', {
@@ -268,22 +333,22 @@ app.get('/test', function (req, res) {
     }, (error, res, body) => {
         console.log("After copy");
         console.log(body);
-        request.post('http://10.7.20.89:3005/start', {
-          json: {
-            DockerImage : body.serviceName,
-            serviceName : "looper",
-            fileName : body.fileName
-          }
-        }, (error, res, body) => {
+        // request.post('http://10.7.20.89:3005/start', {
+        //   json: {
+        //     DockerImage : body.serviceName,
+        //     serviceName : "looper",
+        //     fileName : body.fileName
+        //   }
+        // }, (error, res, body) => {
 
           
           
-        })
+        // })
 
     })
 
 
-  // })
+  })
 })
 
 app.listen(port, function () {
