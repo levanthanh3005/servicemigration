@@ -7,7 +7,12 @@ const request = require('request');
 var path = require('path');
 var fs = require('fs');
 
+var http = require('http');
+
 var port = process.env.PORT || 3000;
+var SMPath = process.env.SMPath;
+var Org = process.env.ORG;
+
 
 const app = express()
 app.use(bodyParser.json());
@@ -240,9 +245,9 @@ app.post('/migration', function (req, res) {
     })
   }
 
-  var zipCheckpoint = function(checkpoint){
-    cmd = "tar -zcvf /tmp/"+checkpoint+".tar.gz /tmp/"+checkpoint;
-
+  var zipCheckpoint = function(checkpoint, callback){
+    cmd = "tar -zcvf /tmp/"+checkpoint+".tar.gz -P /tmp/"+checkpoint;
+    console.log("RUN:"+cmd);
     extras.execute(cmd, function(stdout,error) {
       console.log("zip checkpoint into file :"+checkpoint); 
 
@@ -312,11 +317,11 @@ app.post('/migration', function (req, res) {
   }
 
   makeCheckpoint(function(checkpoint){
-    zipCheckpoint(function(checkpoint){
+    zipCheckpoint(checkpoint,function(checkpoint){
       if (newIP){
         sendCommitFile();
       } else {
-        postCommitFile();
+        postCommitFile(checkpoint);
       }
     })
   });
@@ -324,8 +329,8 @@ app.post('/migration', function (req, res) {
 
 app.post('/uploadcheckpoint/:checkpoint', function (req, res) {
   var checkpoint = path.basename(req.params.checkpoint);
-  
-  filename = "/tmp/"+checkpoint+".tar.gz";
+  //Ref: https://gist.github.com/alepez/9205394
+  filename = path.resolve(__dirname, "/tmp/"+checkpoint+".tar.gz");
 
   var dst = fs.createWriteStream(filename);
   req.pipe(dst);
@@ -334,7 +339,8 @@ app.post('/uploadcheckpoint/:checkpoint', function (req, res) {
     req.resume();
   });
   req.on('end', function () {
-    res.send(200);
+    console.log("Received a file in "+filename);
+    res.sendStatus(200);
   });
 });
 
@@ -383,7 +389,7 @@ app.get('/test', function (req, res) {
     request.post('http://localhost:3000/migration', {
       json: {
         serviceName : "looper",
-        pathPost : "http://10.7.20.89/uploadcheckpoint"
+        pathPost : "http://10.7.136.107:3000/uploadcheckpoint"
       }
     }, (error, res, body) => {
         console.log("After copy");
@@ -406,8 +412,19 @@ app.get('/test', function (req, res) {
   })
 })
 
-app.listen(port, function () {
+function registerToServiceManager(){
+  request.post(SMPath, {
+      json: {
+        organization : org
+      }
+    }, (error, res, body) => {
+      console.log("Register information")
+    })
+}
+
+http.createServer(app).listen(port, function () {
   console.log('MEC app listening on port' + port);
+  registerToServiceManager();
 });
 
 
