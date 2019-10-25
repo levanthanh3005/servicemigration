@@ -167,7 +167,8 @@ function normalStart(req, fn, startcallback) {
             startcallback({
               code : 1,
               ip : myIp,
-              description: "container started"
+              serviceName : serviceName,
+              description : "container started"
             });          
           }
         });
@@ -377,7 +378,7 @@ app.get('/test', function (req, res) {
   res.send("done");
   request.post('http://localhost:3000/start', {
     json: {
-      DockerImage : "busyboxtest",
+      DockerImage : "levanthanh3005/busyboxtest",
       serviceName : "looper"
     }
   }, (error, res, body) => {
@@ -416,6 +417,7 @@ app.get('/test', function (req, res) {
 })
 
 function registerToServiceManager(){
+  console.log("Register to:"+SMPath+"/MECregister")
   request.post(SMPath+"/MECregister", {
       json: {
         organization : org,

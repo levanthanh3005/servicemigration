@@ -6,7 +6,7 @@
 
 
 .MEC {
-	width: 160px;
+	width: 200px;
 	float : left;
 	/*display: inline;*/
 	border: 1px solid black;
@@ -31,6 +31,13 @@
 	height: 100px;
 }
 .deploySvBtn{
+	background: blue;
+	color: white;
+	padding: 10px;
+	text-align: center;
+}
+
+.stopService{
 	background: blue;
 	color: white;
 	padding: 10px;

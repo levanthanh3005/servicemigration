@@ -43,28 +43,61 @@ app.get('/index', function (req, res) {
 app.post('/start', function (req, res) {
   // MECIndex: MECIndex,
   // service : content
-
+  console.log(req.body);
   var MECIndex = parseInt(req.body.MECIndex);
 
   request.post('http://'+lsMEC[MECIndex].ip+':'+lsMEC[MECIndex].port+'/start', {
     json: req.body.service
-  }, (error, res, body) => {
-      console.log("Start service");
+  }, (error, respost, body) => {
+      if (body.code == 1) {
+        console.log("Start service");
+        if (!lsMEC[MECIndex].lsService) {
+          lsMEC[MECIndex].lsService = [];
+        }
+        lsMEC[MECIndex].lsService.push(req.body.service);
+      }
+      res.send(body);
+  })
+
+})
+
+app.post('/stop', function (req, res) {
+  // MECIndex: MECIndex,
+  // serviceIndex : serviceIndex
+  console.log(req.body);
+  var MECIndex = parseInt(req.body.MECIndex);
+  var serviceIndex = parseInt(req.body.serviceIndex);
+
+
+  request.post('http://'+lsMEC[MECIndex].ip+':'+lsMEC[MECIndex].port+'/stop', {
+    json: {
+      serviceName : lsMEC[MECIndex].lsService[serviceIndex].serviceName
+    }
+  }, (error, respost, body) => {
+      if (body.code == 1) {
+        console.log("Stop service");
+        lsMEC[MECIndex].lsService.splice(serviceIndex, 1);
+      }
+      res.send(body);
   })
 
 })
 
 app.post('/MECregister', function (req, res) {
+  var addr = req.connection.remoteAddress;
+  addr = addr.split(":").pop();
   var node = {
-    ip : request.connection.remoteAddress,
+    ip : addr,
     port : req.body.port,
-    org : req.body.org
+    organization : req.body.org
   }
   lsMEC.push(node);
   res.send({
     code : 1,
     description : "uploaded"
   })
+  // console.log(req.connection);
+  console.log("New node:"+addr);
 })
 
 app.post('/migration', function (req, res) {

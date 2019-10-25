@@ -53,14 +53,22 @@
 
       document.getElementById(data).id = "Service_"+newMECIndex+"_"+serviceIndex;
     }
+
+    $(".titleHeader").click(function(){
+        var controller = 
+          '<div class="reboot">'+
+          '  <a href="/reboot/-1">PLEASE PAY ATTENTION TO REBOOT SERVICE MANAGER</a>'+
+          '</div>';
+        $("#MECcontroller").html(controller);
+    })
   </script>
 
   <body>
-    <h2 style="text-align: center">Service manager</h2>
+    <h2 style="text-align: center" class="titleHeader">Service manager</h2>
     <div class="container">
       <% for(s in lsMEC) {%>
       <div class="MEC" id=<%="MEC_"+s %> ondrop="drop(event)" ondragover="allowDrop(event)">
-        <div class="MECIp"><%= lsMEC[s].ip %></div>
+        <div class="MECIp" id=<%="MECIp_"+s %> ><%= lsMEC[s].ip %></div>
         <div class="Services">
           <% for(ss in lsMEC[s].lsService) {%>
             <div class="Service" id=<%="Service_"+s+"_"+ss %> draggable="true" ondragstart="drag(event)">
@@ -88,12 +96,12 @@
       </div>
  -->
       <div class="reboot">
-        <a href="/reboot/-1">PLEASE PAY ATTENTION TO REBOOT</a>
+        <a href="/reboot/-1">PLEASE PAY ATTENTION TO REBOOT SERVICE MANAGER</a>
       </div>
     </div>
     <script type="text/javascript">
-      $(".MEC").click(function(){
-        var MECIndex = $(this).attr("class").split("_").pop();
+      $(".MECIp").click(function(){
+        var MECIndex = $(this).attr("id").split("_").pop();
         MECIndex = parseInt(MECIndex);
 
         var controller = 
@@ -103,8 +111,8 @@
         '  <div class="deploySvBtn MEC_'+MECIndex+'">Deploy</div>'+
         '</div>'+
 
-        '<div class="reboot">'
-        '  <a href="/reboot/"'+MECIndex+'>PLEASE PAY ATTENTION TO REBOOT</a>'+
+        '<div class="reboot">'+
+        '  <a href="/reboot/'+MECIndex+'">PLEASE PAY ATTENTION TO REBOOT</a>'+
         '</div>';
         $("#MECcontroller").html(controller);
 
@@ -122,6 +130,40 @@
           .then(
               function success(name) {
                 console.log("done");
+                location.reload();
+              },
+
+              function fail(data, status) {
+                console.log("fail");
+              }
+          );
+        })
+
+      }) 
+
+      $(".Service").click(function(){
+        var MECIndex = $(this).attr("id").split("_")[1];
+        var serviceIndex = $(this).attr("id").split("_")[2];
+
+        var controller = '<div>'+
+        '  <div class="stopService service_'+MECIndex+'_'+serviceIndex+'">Stop</div>'+
+        '</div>';
+
+        $("#MECcontroller").html(controller);
+
+        $(".stopService").click(function(){
+          var MECIndex = $(this).attr("class").split("_")[1];
+          var serviceIndex = $(this).attr("class").split("_")[2];
+
+          $.post('/stop', {
+                  MECIndex: MECIndex,
+                  serviceIndex : serviceIndex
+              }
+          )
+          .then(
+              function success(name) {
+                console.log("done");
+                location.reload();
               },
 
               function fail(data, status) {

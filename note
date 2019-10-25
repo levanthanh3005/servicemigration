@@ -35,9 +35,14 @@ docker run -it --rm \
 	-p 3005:3000 \
 	-e ORG=Unibz \
 	-e EXTERNALPORT=3005 \
-	-e SMPath=10.7.136.107:3000 \
-	levanthanh3005/dockernode:v0.1 node server.js
+	-e SMPath=http://10.7.136.107:3000 \
+	levanthanh3005/dockernode:v0.1 sh 
 
+------Test:
+{
+      "DockerImage" : "levanthanh3005/busyboxtest",
+      "serviceName" : "looper"
+    }
 
 Todo:
 - Test the code of server works or not
