@@ -37,6 +37,8 @@ app.post('/start', function (req, res) {
       checkpoint : checkpoint name (in case of load)
     }
   */
+  console.log("Start service");
+  console.log(req.body);
 
   if (req.body.checkpoint) {
     startWithCheckpoint(req,res);
@@ -305,8 +307,9 @@ app.post('/migration', function (req, res) {
       console.log('uploaded to ' + pathPost);
       res.send({
         code : 1,
-        description : "uploaded"
-      });  
+        serviceName : serviceName,
+        checkpoint : checkpoint
+      });   
     });
 
     ws.on('error', function (err) {

@@ -110,19 +110,46 @@ app.post('/migration', function (req, res) {
   originalMECIndex = parseInt(req.body.originalMECIndex);
   newMECIndex = parseInt(req.body.newMECIndex);
 
-  console.log(lsMEC);
-  console.log(newMECIndex);
-  console.log(lsMEC[newMECIndex]);
+  request.post('http://'+lsMEC[originalMECIndex].ip+':'+lsMEC[originalMECIndex].port+'/migration', {
+      json: {
+        serviceName : lsMEC[originalMECIndex].lsService[serviceIndex].serviceName,
+        pathPost : 'http://'+lsMEC[newMECIndex].ip+':'+lsMEC[newMECIndex].port+'/uploadcheckpoint'
+      }
+    }, (error, res, body) => {
+        console.log("Copy done");
+        console.log(body);
+        request.post('http://'+lsMEC[newMECIndex].ip+':'+lsMEC[newMECIndex].port+'/start', {
+          json: {
+            DockerImage : lsMEC[originalMECIndex].lsService[serviceIndex].DockerImage,
+            serviceName : lsMEC[originalMECIndex].lsService[serviceIndex].serviceName,
+            checkpoint : body.checkpoint
+          }
+        }, (error, res, body) => {
 
-  lsMEC[newMECIndex].lsService.push(lsMEC[originalMECIndex].lsService[serviceIndex]);
+          if (body.code == 1) {
+            doneMigration();
+          } else {
+            console.log("Error");
+          }
+          
+        })
 
-  lsMEC[originalMECIndex].lsService.splice(serviceIndex, 1);
+    })
 
+  var doneMigration = function() {
+    if (!lsMEC[newMECIndex].lsService) {
+      lsMEC[newMECIndex].lsService = [];
+    }
 
-  res.send({
-    code : 1,
-    description : "migrated"
-  })
+    lsMEC[newMECIndex].lsService.push(lsMEC[originalMECIndex].lsService[serviceIndex]);
+
+    lsMEC[originalMECIndex].lsService.splice(serviceIndex, 1);
+
+    res.send({
+      code : 1,
+      description : "migrated"
+    })
+  }
 })
 
 app.get('/test', function (req, res) {
