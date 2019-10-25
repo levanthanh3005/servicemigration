@@ -10,6 +10,9 @@ var fs = require('fs');
 var http = require('http');
 
 var port = process.env.PORT || 3000;
+
+var externalPort = process.env.EXTERNALPORT || 3000;
+
 var SMPath = process.env.SMPath;
 var Org = process.env.ORG;
 
@@ -413,9 +416,10 @@ app.get('/test', function (req, res) {
 })
 
 function registerToServiceManager(){
-  request.post(SMPath, {
+  request.post(SMPath+"/MECregister", {
       json: {
-        organization : org
+        organization : org,
+        port : externalPort
       }
     }, (error, res, body) => {
       console.log("Register information")

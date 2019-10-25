@@ -4,45 +4,133 @@
     <meta charset="utf-8">
     <link rel="stylesheet" type="text/css" href="/css/style.css">
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:300' rel='stylesheet' type='text/css'>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
   </head>
+
+  <script>
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
+
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
+
+    function drop(ev) {
+      ev.preventDefault();
+      var data = ev.dataTransfer.getData("text");
+      var newMEC;
+      if (ev.target.className == "MEC") {
+        ev.target.appendChild(document.getElementById(data));
+        newMEC = ev.target.id;
+      } 
+      if (ev.target.className == "Service" || ev.target.className == "MECIp")  {
+        ev.target.parentNode.appendChild(document.getElementById(data));
+        newMEC = ev.target.parentNode.id;
+      }
+      console.log(newMEC);
+      var newMECIndex = newMEC.split("_")[1];
+      var originalMECIndex = data.split("_")[1];
+      var serviceIndex = data.split("_")[2];
+      console.log()
+      console.log("Move "+data+" from MEC_"+ originalMECIndex+ " to MEC_"+newMECIndex);
+
+      $.post('/migration', {
+              serviceIndex: serviceIndex,
+              originalMECIndex : originalMECIndex,
+              newMECIndex
+          }
+      )
+      .then(
+          function success(name) {
+            console.log("done");
+          },
+
+          function fail(data, status) {
+            console.log("fail");
+          }
+      );
+
+      document.getElementById(data).id = "Service_"+newMECIndex+"_"+serviceIndex;
+    }
+  </script>
+
   <body>
+    <h2 style="text-align: center">Service manager</h2>
     <div class="container">
-      <h1><%= notePosition %></h1>
-      <h3>List of running containers</h3>
-      <table style="width:100%" id="t01">
-        <tr>
-          <th>Id</th>
-          <th>Images</th>
-          <th>IP Address</th>
-          <th>Action</th>
-          <th>Detail</th>
-        </tr>
-        <% for(s in runningContainers) {%>
-        <tr>
-          <td><%= runningContainers[s].id %></td>
-          <td><%= runningContainers[s].image %></td>
-          <td><%= runningContainers[s].ip %></td>
-          <td><a href=<%= "/machine/stop_container/"+runningContainers[s].id %>>Stop</a></td>
-          <td><a href=<%= "/logs/container/container/"+ runningContainers[s].id %>>Detail</a></td>
-        </tr>
-        <% } %>
-      </table> 
-      <br/>
-      <h3>List of provided link</h3>
-      <table style="width:100%" id="t01">
-        <tr>
-          <th>Link</th>
-          <th>Container name</th>
-        </tr>
-        <% for(s in LinkList) {%>
-        <tr>
-          <td><%= s %></td>
-          <td><%= LinkList[s].name %></td>
-        </tr>
-        <% } %>
-      </table> 
+      <% for(s in lsMEC) {%>
+      <div class="MEC" id=<%="MEC_"+s %> ondrop="drop(event)" ondragover="allowDrop(event)">
+        <div class="MECIp"><%= lsMEC[s].ip %></div>
+        <div class="Services">
+          <% for(ss in lsMEC[s].lsService) {%>
+            <div class="Service" id=<%="Service_"+s+"_"+ss %> draggable="true" ondragstart="drag(event)">
+              <div>
+                <%= lsMEC[s].lsService[ss].serviceName %>
+              </div>
+              <div>
+                <%= lsMEC[s].lsService[ss].DockerImage %>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      </div>
+      <% } %>
+     <br class="clearBoth" />
     </div>
-    <div><a href=<%= "/clean" %>>Clean everything</a></div>
-    <div>-------------------PLEASE PAY ATTENTION TO REBOOT--------------------------<a href=<%= "/reboot" %>>Reboot</a></div>
+    <br/>
+    <hr/>
+    <div class="controller" id="MECcontroller">
+
+<!--       <div>
+        <p class="textcenter">Deploy a service</p>
+        <textarea class="serviceContent servicect_0_1"></textarea>
+        <div class="deploySvBtn servicect_0_1">Deploy</div>
+      </div>
+ -->
+      <div class="reboot">
+        <a href="/reboot/-1">PLEASE PAY ATTENTION TO REBOOT</a>
+      </div>
+    </div>
+    <script type="text/javascript">
+      $(".MEC").click(function(){
+        var MECIndex = $(this).attr("class").split("_").pop();
+        MECIndex = parseInt(MECIndex);
+
+        var controller = 
+        '<div>'+
+        '  <p class="textcenter">Deploy a service</p>'+
+        '  <textarea class="serviceContent MEC_'+MECIndex+'"></textarea>'+
+        '  <div class="deploySvBtn MEC_'+MECIndex+'">Deploy</div>'+
+        '</div>'+
+
+        '<div class="reboot">'
+        '  <a href="/reboot/"'+MECIndex+'>PLEASE PAY ATTENTION TO REBOOT</a>'+
+        '</div>';
+        $("#MECcontroller").html(controller);
+
+        $(".deploySvBtn").click(function(){
+          var MECIndex = $(this).attr("class").split("_").pop();
+          MECIndex = parseInt(MECIndex);
+          var content = $(".serviceContent").val();
+          content = JSON.parse(content);
+
+          $.post('/start', {
+                  MECIndex: MECIndex,
+                  service : content
+              }
+          )
+          .then(
+              function success(name) {
+                console.log("done");
+              },
+
+              function fail(data, status) {
+                console.log("fail");
+              }
+          );
+        })
+
+      }) 
+    </script>
   </body>
 </html>

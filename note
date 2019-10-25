@@ -5,6 +5,9 @@ Questions:
 
 https://mirror.kumi.systems/videolan/vlc/3.0.8/vlc-3.0.8.tar.xz
 
+Enable experiment in ubuntu:
+echo "{\"experimental\": true}" >> /etc/docker/daemon.json
+
 
 todo:
 - MEC start
@@ -24,7 +27,17 @@ docker run -it --rm \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /tmp:/tmp \
 	-w /todo \
-	-p 3000:3000 \
+	-p 3001:3000 \
+	-e EXTERNALPORT=3001 \
+	levanthanh3005/dockernode:v0.1 sh
+
+docker run -it --rm \
+	-v /Users/vanthanhle/Desktop/Tools/ServiceMigration:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /tmp:/tmp \
+	-w /todo \
+	-p 3002:3000 \
+	-e EXTERNALPORT=3002 \
 	levanthanh3005/dockernode:v0.1 sh
 
 
@@ -34,6 +47,7 @@ docker run -it --rm \
 	-v /tmp:/tmp \
 	-w /todo \
 	-p 3005:3000 \
+	-e EXTERNALPORT=3005 \
 	levanthanh3005/dockernode:v0.1 sh
 
 

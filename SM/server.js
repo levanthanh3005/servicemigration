@@ -6,310 +6,129 @@ const request = require('request');
 
 var port = process.env.PORT || 3000;
 
+var externalPort = process.env.EXTERNALPORT || 3000;
+
+
 const app = express()
 app.use(bodyParser.json());
 
-var MECIp = "find that";
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.set('view engine', 'ejs')
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
+var lsMEC = [];
+
+app.get('/', function (req, res) {
+  // res.render('index');
+  res.redirect("/index");
+})
+
+app.get('/index', function (req, res) {
+  //docker-machine ssh swarm-00 "docker stack ls"
+  var machinename = "LOCAL";
+
+  console.log(lsMEC);
+
+  var render = function(){
+    res.render('machine', {
+      lsMEC : lsMEC
+    });
+  }
+
+  render();
+})
 
 app.post('/start', function (req, res) {
-  
-  /*
-    Post {
-      DockerImage : <DockerImage>,
-      env : [{name :<>, value: <>}],
-      ports : [{pC :<>, pH : <>}],
-      network : network,
-      serviceName : optional
-      checkpoint : checkpoint name (in case of load)
-    }
-  */
+  // MECIndex: MECIndex,
+  // service : content
 
-  if (req.body.checkpoint) {
-    startWithCheckpoint(req,res);
-  } else {
-    normalStart(req,"run",function(results){
-        res.send(results);
-    }); 
-  }
+  var MECIndex = parseInt(req.body.MECIndex);
+
+  request.post('http://'+lsMEC[MECIndex].ip+':'+lsMEC[MECIndex].port+'/start', {
+    json: req.body.service
+  }, (error, res, body) => {
+      console.log("Start service");
+  })
 
 })
 
-function startWithCheckpoint(req,res) {
-  //Ref: https://www.criu.org/Docker
-  //docker create
-  //get container id
-  //unzip file from /tmp/checkpoint.tar.gz to 
-  //  /var/lib/docker/containers/<container-ID>/checkpoints/<checkpoint name>/
-  //docker start --checkpoint=<checkpoint name> container-name
-  var getContainerId = function(callback){
-    var cmd = 'docker inspect --format="{{.Id}}" '+req.body.serviceName;
-    extras.execute(cmd, function(stdout, error) {
-      if (error !== null) {
-        res.send({
-          code : 0,
-          description : error
-        });  
-        return;
-      }
-      var containerId = stdout.trim();
-
-      callback(containerId);
-    });
+app.post('/MECregister', function (req, res) {
+  var node = {
+    ip : request.connection.remoteAddress,
+    port : req.body.port,
+    org : req.body.org
   }
-
-  var extractCheckpoint = function(containerId, callback){
-    var checkpoint = req.checkpoint;
-    var cmd = "tar -xf file_name.tar -C /var/lib/docker/containers/"+containerId+"/checkpoints/";
-
-    extras.execute(cmd, function(stdout, error) {
-      if (error !== null) {
-        res.send({
-          code : 0,
-          description : error
-        });  
-        return;
-      }
-      callback();
-    });
-  }
-
-  normalStart(req,"create",function(){
-    getContainerId(function(containerId){
-      extractCheckpoint(function(){
-        var cmd = "docker start --checkpoint="+req.body.checkpoint+" "+req.body.serviceName;
-        extras.execute(cmd, function(stdout, error) {
-          if (error !== null) {
-            res.send({
-              code : 0,
-              description : error
-            });  
-            return;
-          }
-
-          res.send({
-            code : 1,
-            description : "Service "+req.body.serviceName+" start at "+req.body.checkpoint;
-          });  
-
-        });
-      })
-    })
-  });
-
-}
-
-function normalStart(req, fn, startcallback) {
-  //fn = undefine => docker run
-  //fn = "create" => create;
-  console.log(req.body);
-  var lsEnv = req.body.env;
-  var lsPorts = req.body.ports;
-  var serviceName = req.body.serviceName;
-  var network = req.body.network;
-  var command = req.body.command;
-  var DockerImage = req.body.DockerImage;
-
-
-  command = command ? command : "";
-
-  serviceName = serviceName ? serviceName : new Date().getTime();
-
-  network = network ? " --network "+network : "";
-
-  var ports = "";
-  for (var e in lsPorts){
-    ports+= " -p "+lsPorts[e].pC+":"+lsPorts[e].pH;
-  }
-
-  var cmd = "docker "+fn+" -i --rm --name "+serviceName+network+ports+" "+DockerImage+" "+command;
-
-  console.log("Run:"+cmd);
-
-
-  extras.execute(cmd, function(stdout) {
-    maxRq = 100;
-    checkRequest = function(rqcallback) {
-      console.log("Check ip exist");
-      if (maxRq == -1) {
-        return;
-      } else if (maxRq == 0) {
-        // console.log("Maybe it has problem");
-        startcallback({
-          code : 0,
-          description: "Try "+maxRq+" but not executed"
-        });
-      } else {
-        var getIpCmd = "docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "+serviceName;
-        extras.execute(getIpCmd, function(stdout) {
-          myIp = stdout.trim();
-          // myIp = serverIp;
-          maxRq--;
-          // console.log("Get ip:"+myIp+" "+myIp.length);
-          //setMovie file
-          if (myIp.length == 0) {
-            rqcallback();
-            return;
-          } else {
-            startcallback({
-              code : 1,
-              ip : myIp,
-              description: "container started"
-            });          
-          }
-        });
-      }
-    }
-
-    callRequest = function(){
-      timeout = setTimeout(function(){
-        checkRequest(callRequest);
-      },1000);
-    }
-    checkRequest(callRequest);
-    }, true);
-}
-
-app.post('/stop', function (req, res) {
-  
-  /*
-    Post {
-      serviceName : <serviceName>
-      containerId : <containerId>
-    }
-  */
-
-  console.log(req.body);
-  var serviceName = req.body.serviceName;
-  var containerId = req.body.containerId;
-
-  var cmd = "docker container rm " +serviceName+" --force";
-
-  if (!serviceName) {
-    cmd = "docker container rm " +containerId+" --force";
-  }
-  console.log("Run:"+cmd);
-
-  extras.execute(cmd, function(stdout) {
-    res.send({
-      code : 1,
-      description: "container stop"
-    });   
+  lsMEC.push(node);
+  res.send({
+    code : 1,
+    description : "uploaded"
   })
 })
 
 app.post('/migration', function (req, res) {
-  
-  /*
-    Post {
-      serviceName : <serviceName>,
-      newIP : <newIP>,
-      pathPost : <pathPost the zip file>
-    }
-  */
-
+  // serviceIndex: serviceIndex,
+  // originalMECIndex : originalMECIndex,
+  // newMECIndex
   console.log(req.body);
-  var serviceName = req.body.serviceName;
-  var newIP = req.body.newIP;
-  var pathPost = req.body.pathPost;
 
-  var checkpoint = "cp" + new Date().getTime();
+  serviceIndex = parseInt(req.body.serviceIndex);
+  originalMECIndex = parseInt(req.body.originalMECIndex);
+  newMECIndex = parseInt(req.body.newMECIndex);
+
+  console.log(lsMEC);
+  console.log(newMECIndex);
+  console.log(lsMEC[newMECIndex]);
+
+  lsMEC[newMECIndex].lsService.push(lsMEC[originalMECIndex].lsService[serviceIndex]);
+
+  lsMEC[originalMECIndex].lsService.splice(serviceIndex, 1);
 
 
-  var makeCheckpoint = function(callback) {
-    cmd = "docker checkpoint create --checkpoint-dir /tmp "+serviceName+" "+checkpoint;
-
-    extras.execute(cmd, function(stdout,error) {
-      console.log("checkpoint "+checkpoint); 
-
-      if (error !== null) {
-        res.send({
-          code : 0,
-          description : error
-        });  
-        return;
-      }
-
-      callback(checkpoint);
-
-    })
-  }
-
-  var zipCheckpoint = function(checkpoint){
-    cmd = "tar -zcvf /tmp/"+checkpoint+".tar.gz /tmp/"+checkpoint;
-
-    extras.execute(cmd, function(stdout,error) {
-      console.log("zip checkpoint into file :"+checkpoint); 
-
-      if (error !== null) {
-        res.send({
-          code : 0,
-          description : error
-        });  
-        return;
-      }
-
-      callback(checkpoint);
-
-    })
-  }
-
-  var sendCommitFile = function(checkpoint){
-    var cmd = "scp /tmp/"+checkpoint+".tar.gz "+newIP+":/tmp";
-    extras.execute(cmd, function(stdout,error) {
-      console.log("copy to "+newIP); 
-
-      if (error !== null) {
-        res.send({
-          code : 0,
-          description : error
-        });  
-        return;
-      }
-
-      res.send({
-        code : 1,
-        fileName: fileName,
-        serviceName : newServiceName
-      });  
-    })
-
-  }
-
-  var postCommitFile = function(checkpoint){
-    var cmd = "scp /tmp/"+checkpoint+".tar.gz "+newIP+":/tmp";
-    extras.execute(cmd, function(stdout,error) {
-      console.log("copy to "+newIP); 
-
-      if (error !== null) {
-        res.send({
-          code : 0,
-          description : error
-        });  
-        return;
-      }
-
-      res.send({
-        code : 1,
-        fileName: fileName,
-        serviceName : newServiceName
-      });  
-    })
-
-  }
-
-  makeCheckpoint(function(checkpoint){
-    zipCheckpoint(function(checkpoint){
-      if (newIP){
-        sendCommitFile();
-      } else {
-        postCommitFile();
-      }
-    })
-  });
+  res.send({
+    code : 1,
+    description : "migrated"
+  })
 })
+
+app.get('/test', function (req, res) {
+  request.post('http://localhost:3000/MECregister', {
+    json: {
+      organization : "org1"
+    }
+  }, (error, res, body) => {
+
+  })
+})
+
+app.get('/test2', function (req, res) {
+  lsMEC = [];
+  for (var e=3;e<5;e++) {
+    lsMEC.push({
+      ip : "192.168.0."+e,
+      port : 3000,
+      org : "ORG"+e,
+      lsService : [{
+        DockerImage : "DockerImage-1-"+e,
+        env : [{name : "name1", value: "value1"}],
+        ports : [{pC : "3000", pH : "3000"}],
+        network : "network",
+        serviceName : "SN-1"+e
+      },{
+        DockerImage : "DockerImage-2-"+e,
+        env : [{name : "name1", value: "value1"}],
+        ports : [{pC : "3000", pH : "3000"}],
+        network : "network",
+        serviceName : "SN-2"+e
+      }]
+    });
+  }
+
+  res.redirect("/index");
+
+})
+
 
 app.get('/cleanall', function (req, res) {
   //localhost:3000/setNote/Italy
@@ -327,57 +146,27 @@ app.get('/cleanall', function (req, res) {
   });
 })
 
-app.get('/reboot', function (req, res) {
+app.get('/reboot/:MECIndex', function (req, res) {
   //localhost:3000/setNote/Italy
-  var cmd = "sudo reboot";
-  console.log(cmd);
-  extras.execute(cmd, function(stdout) {
-    console.log(stdout);
-    console.log("Reboot");
-  });
+
+  MECIndex = parseInt(req.params.MECIndex);
+
+  if (MECIndex == -1) {
+    var cmd = "sudo reboot";
+    console.log(cmd);
+    extras.execute(cmd, function(stdout) {
+      console.log(stdout);
+      console.log("Reboot");
+    });
+  } else {
+
+    request.get('http://'+lsMEC[MECIndex].ip+':'+lsMEC[MECIndex].port+'/reboot', 
+      function(err,httpResponse,body){
+        console.log("Reboot machine:"+lsMEC[MECIndex].ip);
+      })
+  }
 })
 
-app.get('/test', function (req, res) {
-  res.send("done");
-  request.post('http://localhost:3000/start', {
-    json: {
-      DockerImage : "busyboxtest",
-      serviceName : "looper"
-    }
-  }, (error, res, body) => {
-    if (error) {
-      console.error(error)
-      return
-    }
-    console.log(`statusCode: ${res.statusCode}`)
-    console.log(body)
-
-
-    request.post('http://localhost:3000/internalmigration', {
-      json: {
-        serviceName : "looper",
-        newIP : "vanle@10.7.20.89"
-      }
-    }, (error, res, body) => {
-        console.log("After copy");
-        console.log(body);
-        // request.post('http://10.7.20.89:3005/start', {
-        //   json: {
-        //     DockerImage : body.serviceName,
-        //     serviceName : "looper",
-        //     fileName : body.fileName
-        //   }
-        // }, (error, res, body) => {
-
-          
-          
-        // })
-
-    })
-
-
-  })
-})
 
 app.listen(port, function () {
   console.log('MEC app listening on port' + port);
