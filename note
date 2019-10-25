@@ -16,12 +16,7 @@ todo:
 ++ local migration: move locally
 ++ external migration: submit to service manager to pull the file
 
-docker run -it --rm \
-	-v /Users/vanthanhle/Desktop/Tools/ServiceMigration:/todo \
-	-w /todo \
-	node sh
-
-
+----Service mananger
 docker run -it --rm \
 	-v /Users/vanthanhle/Desktop/Tools/ServiceMigration:/todo \
 	-v /var/run/docker.sock:/var/run/docker.sock \
@@ -31,24 +26,17 @@ docker run -it --rm \
 	-e EXTERNALPORT=3001 \
 	levanthanh3005/dockernode:v0.1 sh
 
-docker run -it --rm \
-	-v /Users/vanthanhle/Desktop/Tools/ServiceMigration:/todo \
-	-v /var/run/docker.sock:/var/run/docker.sock \
-	-v /tmp:/tmp \
-	-w /todo \
-	-p 3002:3000 \
-	-e EXTERNALPORT=3002 \
-	levanthanh3005/dockernode:v0.1 sh
-
-
+----MEC
 docker run -it --rm \
 	-v /home/academic/vanle/servicemigration:/todo \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /tmp:/tmp \
-	-w /todo \
+	-w /todo/MEC \
 	-p 3005:3000 \
+	-e ORG=Unibz \
 	-e EXTERNALPORT=3005 \
-	levanthanh3005/dockernode:v0.1 sh
+	-e SMPath=10.7.136.107:3000 \
+	levanthanh3005/dockernode:v0.1 node server.js
 
 
 Todo:

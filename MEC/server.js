@@ -14,7 +14,7 @@ var port = process.env.PORT || 3000;
 var externalPort = process.env.EXTERNALPORT || 3000;
 
 var SMPath = process.env.SMPath;
-var Org = process.env.ORG;
+var org = process.env.ORG;
 
 
 const app = express()
@@ -422,6 +422,10 @@ function registerToServiceManager(){
         port : externalPort
       }
     }, (error, res, body) => {
+      if (error) {
+        console.log("Fail to register MEC");
+        return;
+      }
       console.log("Register information")
     })
 }
