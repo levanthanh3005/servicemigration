@@ -49,7 +49,7 @@ app.post('/start', function (req, res) {
   request.post('http://'+lsMEC[MECIndex].ip+':'+lsMEC[MECIndex].port+'/start', {
     json: req.body.service
   }, (error, respost, body) => {
-      if (body.code == 1) {
+      if (body.status == 1) {
         console.log("Start service");
         if (!lsMEC[MECIndex].lsService) {
           lsMEC[MECIndex].lsService = [];
@@ -74,7 +74,7 @@ app.post('/stop', function (req, res) {
       serviceName : lsMEC[MECIndex].lsService[serviceIndex].serviceName
     }
   }, (error, respost, body) => {
-      if (body.code == 1) {
+      if (body.status == 1) {
         console.log("Stop service");
         lsMEC[MECIndex].lsService.splice(serviceIndex, 1);
       }
@@ -93,7 +93,7 @@ app.post('/MECregister', function (req, res) {
   }
   lsMEC.push(node);
   res.send({
-    code : 1,
+    status : 1,
     description : "uploaded"
   })
   // console.log(req.connection);
@@ -126,7 +126,7 @@ app.post('/migration', function (req, res) {
           }
         }, (error, res, body) => {
 
-          if (body.code == 1) {
+          if (body.status == 1) {
             doneMigration();
           } else {
             console.log("Error");
@@ -146,7 +146,7 @@ app.post('/migration', function (req, res) {
     lsMEC[originalMECIndex].lsService.splice(serviceIndex, 1);
 
     res.send({
-      code : 1,
+      status : 1,
       description : "migrated"
     })
   }
