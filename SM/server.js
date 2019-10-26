@@ -118,17 +118,15 @@ app.post('/migration', function (req, res) {
     }, (error, res, body) => {
         console.log("Copy done");
         console.log(body);
+        var data = lsMEC[originalMECIndex].lsService[serviceIndex];
+        data.checkpoint = body.checkpoint;
         request.post('http://'+lsMEC[newMECIndex].ip+':'+lsMEC[newMECIndex].port+'/start', {
-          json: {
-            DockerImage : lsMEC[originalMECIndex].lsService[serviceIndex].DockerImage,
-            serviceName : lsMEC[originalMECIndex].lsService[serviceIndex].serviceName,
-            checkpoint : body.checkpoint
-          }
+          json: data
         }, (error, res, body) => {
 
           if (body  && body.status == 1) {
 
-            
+
 
             doneMigration();
           } else {

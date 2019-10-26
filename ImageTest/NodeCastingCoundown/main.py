@@ -27,11 +27,14 @@ def getCurrentImage():
            b'Content-Type: image/jpeg\r\n\r\n' + open('frame.jpg', 'rb').read() + b'\r\n'), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/streaming', methods=['GET', 'POST'])
-def gen(link):
+def streaming():
+    return Response(generate(),
+        mimetype = "multipart/x-mixed-replace; boundary=frame")
+
+def generate():
     """Video streaming generator function."""
     # link = 'http://'+host
     # print(link)
-    cap = cv2.VideoCapture(link)
 
     while True:
         ret, frame = cap.read()
