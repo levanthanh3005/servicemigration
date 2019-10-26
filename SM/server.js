@@ -126,7 +126,10 @@ app.post('/migration', function (req, res) {
           }
         }, (error, res, body) => {
 
-          if (body.status == 1) {
+          if (body  && body.status == 1) {
+
+            
+
             doneMigration();
           } else {
             console.log("Error");

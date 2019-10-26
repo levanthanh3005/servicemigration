@@ -280,7 +280,7 @@ app.post('/migration', function (req, res) {
 
   var makeCheckpoint = function(callback) {
     cmd = "docker checkpoint create --checkpoint-dir /tmp "+serviceName+" "+checkpoint;
-
+//     cmd = "docker checkpoint create --leave-running --checkpoint-dir /tmp "+serviceName+" "+checkpoint;
     extras.execute(cmd, function(stdout,error) {
       console.log("checkpoint "+checkpoint); 
 
