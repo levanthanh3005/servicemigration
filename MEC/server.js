@@ -75,7 +75,7 @@ function startWithCheckpoint(req,res) {
 
   var extractCheckpoint = function(containerId, callback){
     var checkpoint = req.body.checkpoint;
-    var cmd = "tar -xf /tmp/"+checkpoint+".tar.gz -C /var/lib/docker/containers/"+containerId+"/checkpoints/";
+    var cmd = "tar xzvf /tmp/"+checkpoint+".tar.gz -C /dockercontainer/"+containerId+"/checkpoints/";
 
     extras.execute(cmd, function(stdout, error) {
       if (error !== null) {
@@ -89,10 +89,11 @@ function startWithCheckpoint(req,res) {
     });
   }
 
-  normalCreate(req,function(){
-    getContainerId(function(containerId){
+  normalCreate(req,function(results){
+    var containerId = results.containerId;
+    // getContainerId(function(containerId){
       console.log("containerId:"+containerId);
-      extractCheckpoint(function(){
+      extractCheckpoint(containerId,function(){
         var cmd = "docker start --checkpoint="+req.body.checkpoint+" "+req.body.serviceName;
         console.log("Run:"+cmd)
         extras.execute(cmd, function(stdout, error) {
@@ -110,7 +111,7 @@ function startWithCheckpoint(req,res) {
 
         });
       })
-    })
+    // })
   });
 
 }
@@ -144,9 +145,11 @@ function normalCreate(req, startcallback) {
 
 
   extras.execute(cmd, function(stdout) {
+    var containerId = stdout.trim();
     startcallback({
       status : 1,
       serviceName : serviceName,
+      containerId : containerId,
       description : "container started"
     }); 
   })
@@ -295,7 +298,8 @@ app.post('/migration', function (req, res) {
   }
 
   var zipCheckpoint = function(checkpoint, callback){
-    cmd = "tar -zcvf /tmp/"+checkpoint+".tar.gz -P /tmp/"+checkpoint;
+    // cmd = "cd /tmp & tar -zcvf "+checkpoint+".tar.gz -P "+checkpoint;
+    var cmd ="cd /tmp/ && tar -zcvf "+checkpoint+".tar.gz "+checkpoint;
     console.log("RUN:"+cmd);
     extras.execute(cmd, function(stdout,error) {
       console.log("zip checkpoint into file :"+checkpoint); 
@@ -472,6 +476,7 @@ function registerToServiceManager(){
     }, (error, res, body) => {
       if (error) {
         console.log("Fail to register MEC");
+        throw new Error("Fail to register MEC");
         return;
       }
       console.log("Register information")

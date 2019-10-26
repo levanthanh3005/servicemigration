@@ -6,8 +6,7 @@ Questions:
 https://mirror.kumi.systems/videolan/vlc/3.0.8/vlc-3.0.8.tar.xz
 
 Enable experiment in ubuntu:
-echo "{\"experimental\": true}" >> /etc/docker/daemon.json
-
+echo "{\"experimental\": true}" >> /etc/docker/daemon.json & sudo systemctl restart docker
 
 todo:
 - MEC start
@@ -26,16 +25,21 @@ docker run -it --rm \
 	-e EXTERNALPORT=3001 \
 	levanthanh3005/dockernode:v0.1 sh
 
+PORT=3001  node server.js
+
 ----MEC
 docker run -it --rm \
 	-v /home/academic/vanle/servicemigration:/todo \
 	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
 	-v /tmp:/tmp \
 	-w /todo/MEC \
-	-p 3005:3000 \
+	-p 3005:3005 \
 	-e ORG=Unibz \
 	-e EXTERNALPORT=3005 \
-	-e SMPath=172.21.145.9:3000 \
+	-e PORT=3005 \
+	-e SMPath=10.7.20.89:3001 \
+	--name MEC \
 	levanthanh3005/dockernode:v0.1 sh 
 
 ------Test:
