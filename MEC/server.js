@@ -105,7 +105,7 @@ function startWithCheckpoint(req,res) {
             return;
           }
 
-          checkServiceIpExist(serviceName,function(results){
+          checkServiceIpExist(req.body.serviceName,function(results){
             res.send(results);
           })
 
