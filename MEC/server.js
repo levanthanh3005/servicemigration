@@ -139,7 +139,7 @@ function normalCreate(req, startcallback) {
     ports+= " -p "+lsPorts[e].pC+":"+lsPorts[e].pH;
   }
 
-  var cmd = "docker create -i --rm --name "+serviceName+network+ports+" "+DockerImage+" "+command;
+  var cmd = "docker create -dit --rm --name "+serviceName+network+ports+" "+DockerImage+" "+command;
 
   console.log("Run:"+cmd);
 
@@ -179,7 +179,7 @@ function normalStart(req, startcallback) {
     ports+= " -p "+lsPorts[e].pC+":"+lsPorts[e].pH;
   }
 
-  var cmd = "docker run -i --rm --name "+serviceName+network+ports+" "+DockerImage+" "+command;
+  var cmd = "docker run -dit --rm --name "+serviceName+network+ports+" "+DockerImage+" "+command;
 
   console.log("Run:"+cmd);
 

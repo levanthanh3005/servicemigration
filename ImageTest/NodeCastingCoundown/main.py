@@ -51,5 +51,8 @@ def generate():
 def testconnection():
     return "done"
 
+def sendView() :
+    #Read the host of view and post image to this, use addView to do
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

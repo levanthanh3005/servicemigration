@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300' rel='stylesheet' type='text/css'>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  </head>
+
+  <script>
+    setInterval(function(){ 
+      $.get("/getNotification",function(data){
+        console.log(data);
+        $("#dateTime").html(data.dateTime);
+        $("#timestamp").html(data.timestamp);
+        $("#ipAddress").html(data.ipAddress);
+      });
+    }, 2000);
+  </script>
+
+  <body>
+    <h2 style="text-align: center" id="dateTime">
+      <%=data.dateTime %>      
+    </h2>
+    </br>
+    <h2 style="text-align: center" id="timestamp">
+      <%=data.timestamp %>      
+    </h2>
+    </br>
+    <h2 style="text-align: center" id="ipAddress">
+      <%=data.ipAddress %>      
+    </h2>
+    </br>
+  </body>
+</html>

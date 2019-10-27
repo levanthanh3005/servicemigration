@@ -1,0 +1,18 @@
+apt-get install docker.io
+apt-get install criu
+apt-get install runc
+
+echo tcp-established > /etc/criu/runc.conf
+echo tcp-established > /etc/criu/default.conf
+mkdir -p /etc/criu/ && echo "ghost-limit 100M" >> /etc/criu/default.conf
+
+mkdir -p $HOME/.criu/ && echo "ghost-limit 1000M" >> $HOME/.criu/default.conf
+echo tcp-established > $HOME/.criu/runc.conf
+
+sudo systemctl restart docker
+
+docker run -d --name nodecasting -p 5000:5000 nodecasting
+
+docker checkpoint create nodecasting ck1
+
+docker rm nodecasting -f
