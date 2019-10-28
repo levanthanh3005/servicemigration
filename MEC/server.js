@@ -417,16 +417,16 @@ app.get('/getContainers', function (req, res) {
 
 function getRunningContainers(callback){
 // registerToServiceManager();
-  var containers = {};
+  var containers = [];
   var getContainerCMD = function(callback) {
-    console.log("getContainers");
+    // console.log("getContainers");
     var cmd = "docker container ls";
     extras.execute(cmd, function(stdout) {
-      console.log(stdout);
+      // console.log(stdout);
       // console.log("Finish get list containers");
       data = extras.splitString(stdout);
       var runningContainers = extras.parseContainers(data.fullData);
-      console.log(runningContainers);
+      // console.log(runningContainers);
       callback(runningContainers)
     });
   }
@@ -450,14 +450,14 @@ function getRunningContainers(callback){
       for (var p in lsPortData) {
         lsPorts.push(lsPortData[p][0]["HostPort"]+":"+p.split("/")[0]);
       }
-      containers[runningContainers[index].id] = {
+      containers.push({
         "DockerImage" : inspectData["Config"]["Image"],
         "env" : inspectData["Config"]["Env"],
         "ports" : lsPorts,
         "containerId" : inspectData["Config"]["Hostname"],
         "fullId" : inspectData["Id"],
         "serviceName" : inspectData["Name"].split("/").pop()
-      };
+      });
       inspectEachContainer(index+1, runningContainers);
     });
   }

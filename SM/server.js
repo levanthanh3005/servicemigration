@@ -61,6 +61,32 @@ app.post('/start', function (req, res) {
 
 })
 
+app.get('/getContainers', function (req, res) {
+  // res.render('index');
+  // console.log("getContainers");
+  function retrieveContainerData(index){
+    if (index >= lsMEC.length) {
+      res.send(lsMEC);
+      return;
+    }
+
+    request.get('http://'+lsMEC[index].ip+':'+lsMEC[index].port+'/getContainers', 
+      function(err,httpResponse,body){
+        // console.log(body);
+        if (err){
+          console.log("Error at:"+lsMEC[index].ip);
+          lsMEC.splice(index, 1);
+          retrieveContainerData(index);
+          return;
+        }
+
+        lsMEC[index].lsService = JSON.parse(body);
+        retrieveContainerData(index+1)
+      })
+  }
+  retrieveContainerData(0);
+})
+
 app.post('/stop', function (req, res) {
   // MECIndex: MECIndex,
   // serviceIndex : serviceIndex
