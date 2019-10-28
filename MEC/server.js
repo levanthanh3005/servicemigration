@@ -1,5 +1,5 @@
 const express = require('express');
-const extras = require('../extras');
+const extras = require('./extras');
 
 const bodyParser = require('body-parser');
 const request = require('request');
@@ -30,8 +30,8 @@ app.post('/start', function (req, res) {
   /*
     Post {
       DockerImage : <DockerImage>,
-      env : [{name :<>, value: <>}],
-      ports : [{pC :<>, pH : <>}],
+      env : [[,]],
+      ports : [[,]],
       network : network,
       serviceName : optional
       checkpoint : checkpoint name (in case of load)
@@ -136,10 +136,15 @@ function normalCreate(req, startcallback) {
 
   var ports = "";
   for (var e in lsPorts){
-    ports+= " -p "+lsPorts[e].pC+":"+lsPorts[e].pH;
+    ports+= " -p "+lsPorts[e];
   }
 
-  var cmd = "docker create -dit --rm --name "+serviceName+network+ports+" "+DockerImage+" "+command;
+  var envs = "";
+  for (var e in lsEnv){
+    ports+= " -e "+lsEnv[e];
+  }
+
+  var cmd = "docker run -d --rm --name "+serviceName+network+ports+envs+" "+DockerImage+" "+command;
 
   console.log("Run:"+cmd);
 
@@ -176,10 +181,15 @@ function normalStart(req, startcallback) {
 
   var ports = "";
   for (var e in lsPorts){
-    ports+= " -p "+lsPorts[e].pC+":"+lsPorts[e].pH;
+    ports+= " -p "+lsPorts[e];
   }
 
-  var cmd = "docker run -dit --rm --name "+serviceName+network+ports+" "+DockerImage+" "+command;
+  var envs = "";
+  for (var e in lsEnv){
+    ports+= " -e "+lsEnv[e];
+  }
+
+  var cmd = "docker run -d --rm --name "+serviceName+network+ports+envs+" "+DockerImage+" "+command;
 
   console.log("Run:"+cmd);
 
@@ -398,6 +408,66 @@ app.post('/uploadcheckpoint/:checkpoint', function (req, res) {
   });
 });
 
+app.get('/getContainers', function (req, res) {
+  getRunningContainers(function(containers){
+    res.send(containers);
+  })
+})
+
+
+function getRunningContainers(callback){
+// registerToServiceManager();
+  var containers = {};
+  var getContainerCMD = function(callback) {
+    console.log("getContainers");
+    var cmd = "docker container ls";
+    extras.execute(cmd, function(stdout) {
+      console.log(stdout);
+      // console.log("Finish get list containers");
+      data = extras.splitString(stdout);
+      var runningContainers = extras.parseContainers(data.fullData);
+      console.log(runningContainers);
+      callback(runningContainers)
+    });
+  }
+  var sendLsContainers = function() {
+    console.log(containers);
+    callback(containers);
+  }
+
+  var inspectEachContainer = function(index, runningContainers) {
+    if (index >= runningContainers.length) {
+      sendLsContainers();
+      return;
+    }
+    var cmd = "docker inspect "+runningContainers[index].id;
+    console.log("Run:"+cmd);
+    extras.execute(cmd, function(stdout) {
+      console.log(stdout);
+      var inspectData = JSON.parse(stdout)[0];
+      var lsPortData = inspectData["NetworkSettings"]["Ports"];
+      var lsPorts = [];
+      for (var p in lsPortData) {
+        lsPorts.push(lsPortData[p][0]["HostPort"]+":"+p.split("/")[0]);
+      }
+      containers[runningContainers[index].id] = {
+        "DockerImage" : inspectData["Config"]["Image"],
+        "env" : inspectData["Config"]["Env"],
+        "ports" : lsPorts,
+        "containerId" : inspectData["Config"]["Hostname"],
+        "fullId" : inspectData["Id"],
+        "serviceName" : inspectData["Name"].split("/").pop()
+      };
+      inspectEachContainer(index+1, runningContainers);
+    });
+  }
+
+  getContainerCMD(function(runningContainers){
+    inspectEachContainer(0,runningContainers);
+  });
+}
+
+
 app.get('/cleanall', function (req, res) {
   //localhost:3000/setNote/Italy
   var cmd = "docker rm $(docker container ls -aq) -f";
@@ -485,24 +555,4 @@ function registerToServiceManager(){
 
 http.createServer(app).listen(port, function () {
   console.log('MEC app listening on port' + port);
-  registerToServiceManager();
 });
-
-
-//ClEAN:
-//docker rm -v $(docker ps --filter status=exited -q 2>/dev/null) 2>/dev/null
-//docker rmi $(docker images --filter dangling=true -q 2>/dev/null) 2>/dev/null
-//docker rmi $(docker images -q)
-//docker rm $(docker ps -a -q)
-//docker volume rm $(docker volume ls  -q)
-////////////////////NOTE
-//PROXY
-//sometimes, proxy can not accept the route, but please rerun stack create... again 
-//to update the service, it will update the proxy, the problem come from when we ping
-//proxy, but the container has not run yet, the proxy will not accept it, but after that
-//we update it again, it will accept because the container exits
-//PROMOTHEUS
-//Some example are quite clear now, just an issue that if we would like to store any
-//promotheous indices, please use: 
-//REQUEST_LATENCY = Histogram('http_server_resp_time', 'Request latency',['app_name', 'method', 'endpoint', 'http_status'])
-//#funciton name = real funcition - "bucket", for example: http_server_resp_time = http_server_resp_time_bucket - bucket 

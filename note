@@ -23,6 +23,8 @@ docker run -it --rm \
 	-w /todo \
 	-p 3001:3000 \
 	-e EXTERNALPORT=3001 \
+	-e PORT=3000 \
+	--name MEC \
 	levanthanh3005/dockernode:v0.1 sh
 
 PORT=3001  node server.js
@@ -51,8 +53,20 @@ docker run -it --rm \
 {
 	"DockerImage" : "levanthanh3005/nodecasting:countdown",
 	"serviceName" : "nodecasting",
-	"ports" : [{"pC":5000, "pH":5000}]
+	"ports" : [[5000,5000]]
 }
+{
+	"DockerImage" : "levanthanh3005/notificationreceiver:v0.1",
+	"serviceName" : "notificationreceiver",
+	"ports" : ["3003:3003"],
+	"env" : ["PORT=3003"]
+}
+{
+	"DockerImage" : "levanthanh3005/notificationpush:v0.1",
+	"serviceName" : "notificationpush",
+	"env" : ["PUSHPATH=http://10.7.20.89:3003/notification"]
+}
+
 Todo:
 - Test the code of server works or not
 - make ssh without password in macos
