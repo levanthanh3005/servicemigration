@@ -555,4 +555,5 @@ function registerToServiceManager(){
 
 http.createServer(app).listen(port, function () {
   console.log('MEC app listening on port' + port);
+  registerToServiceManager();
 });

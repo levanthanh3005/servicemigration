@@ -40,7 +40,7 @@ docker run -it --rm \
 	-e ORG=Unibz \
 	-e EXTERNALPORT=3005 \
 	-e PORT=3005 \
-	-e SMPath=10.7.20.89:3001 \
+	-e SMPath=10.7.136.107:3000 \
 	--name MEC \
 	levanthanh3005/dockernode:v0.1 sh 
 
