@@ -48,6 +48,9 @@
     </div>
     <script type="text/javascript">
       $(".MECIp").click(function(){
+
+        stopLoadingData = true;
+
         var MECIndex = $(this).attr("id").split("_").pop();
         MECIndex = parseInt(MECIndex);
 

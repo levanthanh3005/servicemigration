@@ -445,9 +445,9 @@ function getRunningContainers(callback){
       return;
     }
     var cmd = "docker inspect "+runningContainers[index].id;
-    console.log("Run:"+cmd);
+    // console.log("Run:"+cmd);
     extras.execute(cmd, function(stdout) {
-      console.log(stdout);
+    //   console.log(stdout);
       var inspectData = JSON.parse(stdout)[0];
       var lsPortData = inspectData["NetworkSettings"]["Ports"];
       var lsPorts = [];
@@ -463,7 +463,7 @@ function getRunningContainers(callback){
         "serviceName" : inspectData["Name"].split("/").pop()
       });
       inspectEachContainer(index+1, runningContainers);
-    });
+    }, false, true);
   }
 
   getContainerCMD(function(runningContainers){
