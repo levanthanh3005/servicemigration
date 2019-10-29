@@ -152,8 +152,6 @@ app.post('/migration', function (req, res) {
 
           if (body  && body.status == 1) {
 
-
-
             doneMigration();
           } else {
             console.log("Error");
@@ -256,7 +254,7 @@ app.get('/reboot/:MECIndex', function (req, res) {
 
 
 app.listen(port, function () {
-  console.log('MEC app listening on port' + port);
+  console.log('Service Manger app listening on port' + port);
 });
 
 

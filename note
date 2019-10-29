@@ -27,6 +27,23 @@ docker run -it --rm \
 	--name MEC \
 	levanthanh3005/dockernode:v0.1 sh
 
+docker run -it --rm \
+	-v /home/academic/vanle/servicemigration/:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-w /todo \
+	-p 3001:3001 \
+	-e EXTERNALPORT=3001 \
+	-e PORT=3001 \
+	levanthanh3005/dockernode:v0.1 sh
+
+docker run -it --rm \
+	-p 3001:3001 \
+	-e EXTERNALPORT=3001 \
+	-e PORT=3001 \
+	--name SM \
+	levanthanh3005/servicemanager:v0.1
+
+
 PORT=3001  node server.js
 
 ----MEC
@@ -40,9 +57,21 @@ docker run -it --rm \
 	-e ORG=Unibz \
 	-e EXTERNALPORT=3005 \
 	-e PORT=3005 \
-	-e SMPath=10.7.136.107:3000 \
+	-e SMPath=10.7.20.89:3001 \
 	--name MEC \
 	levanthanh3005/dockernode:v0.1 sh 
+
+docker run -it --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
+	-v /tmp:/tmp \
+	-p 3005:3005 \
+	-e ORG=Unibz \
+	-e EXTERNALPORT=3005 \
+	-e PORT=3005 \
+	-e SMPath=10.7.20.89:3001 \
+	--name MEC \
+	levanthanh3005/mec:v0.1
 
 ------Test:
 {
@@ -53,8 +82,9 @@ docker run -it --rm \
 {
 	"DockerImage" : "levanthanh3005/nodecasting:countdown",
 	"serviceName" : "nodecasting",
-	"ports" : [[5000,5000]]
+	"ports" : ["5000:5000"]
 }
+
 {
 	"DockerImage" : "levanthanh3005/notificationreceiver:v0.1",
 	"serviceName" : "notificationreceiver",
@@ -66,6 +96,13 @@ docker run -it --rm \
 	"serviceName" : "notificationpush",
 	"env" : ["PUSHPATH=http://10.7.20.89:3003/notification"]
 }
+--------Startup:
+docker run -d -p 3000:3000 -v "$(pwd):/home/project:cached" theiaide/theia:next theia browsertheia desktop 
+
+---------Go between
+
+docker run -p 80:80 -v /Users/vanthanhle/Desktop/Tools/ServiceMigration/gobetween:/etc/gobetween/conf/:rw yyyar/gobetween
+
 
 Todo:
 - Test the code of server works or not

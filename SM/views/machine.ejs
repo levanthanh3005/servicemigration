@@ -92,6 +92,8 @@
         var MECIndex = $(this).attr("id").split("_")[1];
         var serviceIndex = $(this).attr("id").split("_")[2];
 
+        stopLoadingData = true;
+
         var controller = '<div>'+
         '  <div class="stopService service_'+MECIndex+'_'+serviceIndex+'">Stop</div>'+
         '</div>';

@@ -74,4 +74,5 @@ $(".titleHeader").click(function(){
       '  <a href="/reboot/-1">PLEASE PAY ATTENTION TO REBOOT SERVICE MANAGER</a>'+
       '</div>';
     $("#MECcontroller").html(controller);
+    stopLoadingData = false;
 })

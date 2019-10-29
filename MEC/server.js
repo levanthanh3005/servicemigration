@@ -39,6 +39,7 @@ app.post('/start', function (req, res) {
   */
   console.log("Start service");
   console.log(req.body);
+  console.log(req.body.checkpoint);
 
   if (req.body.checkpoint) {
     startWithCheckpoint(req,res);
@@ -57,6 +58,8 @@ function startWithCheckpoint(req,res) {
   //unzip file from /tmp/checkpoint.tar.gz to 
   //  /var/lib/docker/containers/<container-ID>/checkpoints/<checkpoint name>/
   //docker start --checkpoint=<checkpoint name> container-name
+  console.log("Start with checkpoint");
+
   var getContainerId = function(callback){
     var cmd = 'docker inspect --format="{{.Id}}" '+req.body.serviceName;
     extras.execute(cmd, function(stdout, error) {
@@ -144,7 +147,7 @@ function normalCreate(req, startcallback) {
     ports+= " -e "+lsEnv[e];
   }
 
-  var cmd = "docker run -d --rm --name "+serviceName+network+ports+envs+" "+DockerImage+" "+command;
+  var cmd = "docker create --name "+serviceName+network+ports+envs+" "+DockerImage+" "+command;
 
   console.log("Run:"+cmd);
 
@@ -164,6 +167,7 @@ function normalCreate(req, startcallback) {
 function normalStart(req, startcallback) {
   //fn = undefine => docker run
   //fn = "create" => create;
+  console.log("Start as normal");
   console.log(req.body);
   var lsEnv = req.body.env;
   var lsPorts = req.body.ports;

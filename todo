@@ -1,0 +1,4 @@
+todo
+
+- docker container ls -a <= must have -a
+- Fix the reload of div container in SM
