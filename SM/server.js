@@ -29,7 +29,7 @@ app.get('/index', function (req, res) {
   //docker-machine ssh swarm-00 "docker stack ls"
   var machinename = "LOCAL";
 
-  console.log(lsMEC);
+  // console.log(lsMEC);
 
   var render = function(){
     res.render('machine', {
