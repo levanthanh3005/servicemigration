@@ -1,5 +1,5 @@
 module.exports = {
-	execute : function(command, callback, isOnlyRun) {
+	execute : function(command, callback, isOnlyRun, detach) {
 		var exec = require('child_process').exec;
 		var spawn = require('child_process').spawn;
 		var child;
@@ -15,12 +15,14 @@ module.exports = {
 		} else {
 			child = exec(command,
 			   function (error, stdout, stderr) {
-			      console.log('stdout: ' + stdout);
-			      console.log('stderr: ' + stderr);
-			      if (error !== null) {
-			          console.log('exec error: ' + error);
-			      }
-			      callback(stdout, error);
+			   		if (!detach) {
+						console.log('stdout: ' + stdout);
+						console.log('stderr: ' + stderr);
+					}
+					if (error !== null) {
+						console.log('exec error: ' + error);
+					}
+					callback(stdout, error);
 			   });
 		}
 	},

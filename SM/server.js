@@ -136,30 +136,49 @@ app.post('/migration', function (req, res) {
   originalMECIndex = parseInt(req.body.originalMECIndex);
   newMECIndex = parseInt(req.body.newMECIndex);
 
-  request.post('http://'+lsMEC[originalMECIndex].ip+':'+lsMEC[originalMECIndex].port+'/migration', {
-      json: {
-        serviceName : lsMEC[originalMECIndex].lsService[serviceIndex].serviceName,
-        pathPost : 'http://'+lsMEC[newMECIndex].ip+':'+lsMEC[newMECIndex].port+'/uploadcheckpoint'
-      }
-    }, (error, res, body) => {
-        console.log("Copy done");
-        console.log(body);
-        var data = lsMEC[originalMECIndex].lsService[serviceIndex];
-        data.checkpoint = body.checkpoint;
-        request.post('http://'+lsMEC[newMECIndex].ip+':'+lsMEC[newMECIndex].port+'/start', {
-          json: data
-        }, (error, res, body) => {
+  var lsEnv = lsMEC[originalMECIndex].lsService[serviceIndex].env;
+  var pauseLink = "";
+  for (e in lsEnv) {
+    if (lsEnv[e].split("=")[0] == "PAUSE") {
+      pauseLink = 'http://'+lsMEC[originalMECIndex].ip+':'+lsEnv[e].split("=")[1];
+      break;
+    }
+  }
 
-          if (body  && body.status == 1) {
+  var pauseRunningService = function(){
+    request.get(pauseLink, 
+      function(err,httpResponse,body){
+        console.log("Stop current service:"+pauseLink);
+        startMigration();
+      })
+  }
 
-            doneMigration();
-          } else {
-            console.log("Error");
-          }
-          
-        })
+  var startMigration = function(){     
+    request.post('http://'+lsMEC[originalMECIndex].ip+':'+lsMEC[originalMECIndex].port+'/migration', {
+        json: {
+          serviceName : lsMEC[originalMECIndex].lsService[serviceIndex].serviceName,
+          pathPost : 'http://'+lsMEC[newMECIndex].ip+':'+lsMEC[newMECIndex].port+'/uploadcheckpoint'
+        }
+      }, (error, res, body) => {
+          console.log("Copy done");
+          console.log(body);
+          var data = lsMEC[originalMECIndex].lsService[serviceIndex];
+          data.checkpoint = body.checkpoint;
+          request.post('http://'+lsMEC[newMECIndex].ip+':'+lsMEC[newMECIndex].port+'/start', {
+            json: data
+          }, (error, res, body) => {
 
-    })
+            if (body  && body.status == 1) {
+
+              doneMigration();
+            } else {
+              console.log("Error");
+            }
+            
+          })
+
+      })
+  }
 
   var doneMigration = function() {
     if (!lsMEC[newMECIndex].lsService) {
@@ -175,6 +194,13 @@ app.post('/migration', function (req, res) {
       description : "migrated"
     })
   }
+
+  if (pauseLink) {
+    pauseRunningService();
+  } else {
+    startMigration();
+  }
+
 })
 
 app.get('/test', function (req, res) {

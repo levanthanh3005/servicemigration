@@ -79,7 +79,7 @@ function startWithCheckpoint(req,res) {
   var extractCheckpoint = function(containerId, callback){
     var checkpoint = req.body.checkpoint;
     var cmd = "tar xzvf /tmp/"+checkpoint+".tar.gz -C /dockercontainer/"+containerId+"/checkpoints/";
-
+    console.log("Run:"+cmd);
     extras.execute(cmd, function(stdout, error) {
       if (error !== null) {
         res.send({
@@ -424,7 +424,7 @@ function getRunningContainers(callback){
   var containers = [];
   var getContainerCMD = function(callback) {
     // console.log("getContainers");
-    var cmd = "docker container ls";
+    var cmd = "docker container ls -a";
     extras.execute(cmd, function(stdout) {
       // console.log(stdout);
       // console.log("Finish get list containers");
@@ -432,10 +432,10 @@ function getRunningContainers(callback){
       var runningContainers = extras.parseContainers(data.fullData);
       // console.log(runningContainers);
       callback(runningContainers)
-    });
+    }, false, true);
   }
   var sendLsContainers = function() {
-    console.log(containers);
+    // console.log(containers);
     callback(containers);
   }
 

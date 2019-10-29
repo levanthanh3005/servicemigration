@@ -82,7 +82,8 @@ docker run -it --rm \
 {
 	"DockerImage" : "levanthanh3005/nodecasting:countdown",
 	"serviceName" : "nodecasting",
-	"ports" : ["5000:5000"]
+	"ports" : ["5000:5000"],
+	"env" : ["PAUSE=5000/pause"]
 }
 
 {

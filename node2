@@ -72,4 +72,10 @@ docker run -d -p 5000:5000 --name nodecasting levanthanh3005/nodecasting:countdo
 
 docker rm -f nodecasting
 
+rm -rf /tmp/ck
+
+tar xzvf /tmp/cp1572347610581.tar.gz -C /var/lib/docker/containers/7c03472970c300de1e997ef0d4b5f86114224877914fdf07cfc10d8f9d135314/checkpoints/
+
 docker checkpoint create --checkpoint-dir /tmp nodecasting ck
+docker checkpoint create nodecasting ck
+docker start --checkpoint=cp1572347610581  nodecasting

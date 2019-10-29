@@ -10,6 +10,7 @@ app = Flask(__name__)
 
 cap = cv2.VideoCapture('coundown.mp4')
 
+isPause = False
 
 @app.route('/getCurrentImage', methods=['GET', 'POST'])
 def getCurrentImage():
@@ -26,8 +27,17 @@ def getCurrentImage():
     return Response((b'--frame\r\n'
            b'Content-Type: image/jpeg\r\n\r\n' + open('frame.jpg', 'rb').read() + b'\r\n'), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route('/pause', methods=['GET', 'POST'])
+def pause():
+    global isPause
+    isPause = True
+    return "Done"
+
 @app.route('/streaming', methods=['GET', 'POST'])
 def streaming():
+    global isPause
+    isPause = False
+    print("Streaming")
     return Response(generate(),
         mimetype = "multipart/x-mixed-replace; boundary=frame")
 
@@ -35,9 +45,12 @@ def generate():
     """Video streaming generator function."""
     # link = 'http://'+host
     # print(link)
+    global isPause
 
-    while True:
+    while (isPause==False) :
         ret, frame = cap.read()
+        
+        # print(isPause)
 
         if not ret:
             print("Error: failed to capture image")
@@ -51,7 +64,7 @@ def generate():
 def testconnection():
     return "done"
 
-def sendView() :
+#def sendView() :
     #Read the host of view and post image to this, use addView to do
 
 if __name__ == '__main__':
