@@ -8,6 +8,9 @@ var port = process.env.PORT || 3000;
 
 var externalPort = process.env.EXTERNALPORT || 3000;
 
+var gobetween = process.env.GOBETWEEN;
+
+var proxyPort = process.env.PROXYPORT;
 
 const app = express()
 app.use(bodyParser.json());
@@ -83,6 +86,20 @@ app.get('/getContainers', function (req, res) {
         lsMEC[index].lsService = JSON.parse(body);
         retrieveContainerData(index+1)
       })
+
+    // request.get('http://'+lsMEC[index].ip+':'+lsMEC[index].port+'/getContainers', 
+    //   function(err,httpResponse,body){
+    //     // console.log(body);
+    //     if (err){
+    //       console.log("Error at:"+lsMEC[index].ip);
+    //       lsMEC.splice(index, 1);
+    //       retrieveContainerData(index);
+    //       return;
+    //     }
+
+    //     lsMEC[index].lsService = JSON.parse(body);
+    //     retrieveContainerData(index+1)
+    //   })
   }
   retrieveContainerData(0);
 })
@@ -112,6 +129,11 @@ app.post('/stop', function (req, res) {
 app.post('/MECregister', function (req, res) {
   var addr = req.connection.remoteAddress;
   addr = addr.split(":").pop();
+
+  if (addr == "127.0.0.1" || addr == "0.0.0.0" || addr == "172.17.0.1") {
+    addr = process.env.MYREALIP;
+  }
+
   var node = {
     ip : addr,
     port : req.body.port,
@@ -121,6 +143,8 @@ app.post('/MECregister', function (req, res) {
   res.send({
     status : 1,
     description : "uploaded"
+    // gobetween : gobetween,
+    // ip : addr
   })
   // console.log(req.connection);
   console.log("New node:"+addr);
@@ -149,7 +173,10 @@ app.post('/migration', function (req, res) {
     request.get(pauseLink, 
       function(err,httpResponse,body){
         console.log("Stop current service:"+pauseLink);
-        startMigration();
+        setTimeout(function(){//<======FIX IT
+          startMigration();
+        }, 1000); 
+        // startMigration();
       })
   }
 
@@ -276,6 +303,104 @@ app.get('/reboot/:MECIndex', function (req, res) {
         console.log("Reboot machine:"+lsMEC[MECIndex].ip);
       })
   }
+})
+
+var proxyServicePort = {};
+
+app.post('/assignProxy', function(req,res){
+
+  if (!gobetween) {
+    res.send({
+      status : 0,
+      description : "no gobetween"
+    })
+    return;
+  }
+
+  var serviceInfo = req.body.serviceInfo;
+  var machineIp = req.connection.remoteAddress;
+  machineIp = machineIp.split(":").pop();
+
+
+  var externalPort = "";
+  for(e in serviceInfo.env) {
+    if (serviceInfo.env[e].split("=")[0] == "EXTERNALPORT") {
+      externalPort = serviceInfo.env[e].split("=")[1]
+    }
+  }
+  if (!externalPort) {
+    res.send({
+      status : 0,
+      description : "no external Port of service"
+    })
+    return;
+  }
+
+  var choosePort = proxyPort;
+  if (proxyServicePort[serviceInfo.serviceName]){
+    choosePort = proxyServicePort[serviceInfo.serviceName];
+  }
+
+  console.log("Assign to Proxy")
+  request.delete("http://"+gobetween+"/servers/"+serviceInfo.serviceName, function(){
+    
+    request.post("http://"+gobetween+"/servers/"+serviceInfo.serviceName, {
+        json: {
+            "max_connections": 0,
+            "client_idle_timeout": "0",
+            "backend_idle_timeout": "0",
+            "backend_connection_timeout": "0",
+            "bind": "0.0.0.0:"+choosePort,
+            "protocol": "tcp",
+            "balance": "weight",
+            "sni": null,
+            "tls": null,
+            "backends_tls": null,
+            "udp": null,
+            "access": null,
+            "proxy_protocol": null,
+            "discovery": {
+                "kind": "static",
+                "failpolicy": "keeplast",
+                "interval": "0",
+                "timeout": "0",
+                "static_list": [
+                    machineIp+":"+externalPort+" weight=40 priority=1"
+                ]
+            },
+            "healthcheck": {
+                "kind": "none",
+                "interval": "0",
+                "passes": 1,
+                "fails": 1,
+                "timeout": "0"
+            }
+        }
+      }, (error, result, body) => {
+        if (error) {
+          console.log("Error in assigning proxy");
+          res.send({
+            status : 0,
+            description : "Error in assigning proxy"
+          })
+          return;
+        }
+
+        res.send({
+          status : 1,
+          description : "Assigned port",
+          port : choosePort
+        })
+
+        console.log(body);
+        console.log("Done with proxy");
+
+        if (choosePort == proxyPort) {
+          proxyPort++;
+        }
+        proxyServicePort[serviceInfo.serviceName] = choosePort;
+      })
+  })
 })
 
 

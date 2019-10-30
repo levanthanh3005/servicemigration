@@ -21,8 +21,8 @@
 }
 .Service {
 	text-align: center;
-	height: 100px;
 	border: 1px solid black;
+	height: 100px;
 	margin : 5px;
 }
 
@@ -62,3 +62,10 @@
 }
 
 .clearBoth { clear:both; }
+
+.borderBlue {
+	border: 2px solid blue;
+}
+.borderBlack {
+	border: 1px solid black;
+}

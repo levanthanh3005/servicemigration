@@ -20,26 +20,33 @@ docker run -it --rm \
 	-v /Users/vanthanhle/Desktop/Tools/ServiceMigration:/todo \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /tmp:/tmp \
-	-w /todo \
-	-p 3001:3000 \
+	-w /todo/SM \
+	-p 3001:3001 \
 	-e EXTERNALPORT=3001 \
-	-e PORT=3000 \
-	--name MEC \
+	-e PORT=3001 \
+	-e GOBETWEEN=10.7.20.89:6003 \
+	--name SM \
 	levanthanh3005/dockernode:v0.1 sh
 
 docker run -it --rm \
 	-v /home/academic/vanle/servicemigration/:/todo \
 	-v /var/run/docker.sock:/var/run/docker.sock \
-	-w /todo \
+	-w /todo/SM \
 	-p 3001:3001 \
 	-e EXTERNALPORT=3001 \
 	-e PORT=3001 \
+	-e GOBETWEEN=10.7.20.89:6003 \
+	-e PROXYPORT=7000 \
+	-e MYREALIP=10.7.20.89 \
 	levanthanh3005/dockernode:v0.1 sh
 
 docker run -it --rm \
 	-p 3001:3001 \
 	-e EXTERNALPORT=3001 \
 	-e PORT=3001 \
+	-e GOBETWEEN=10.7.20.89:6003 \
+	-e PROXYPORT=7000 \
+	-e MYIP=10.7.20.89 \
 	--name SM \
 	levanthanh3005/servicemanager:v0.1
 
@@ -83,7 +90,7 @@ docker run -it --rm \
 	"DockerImage" : "levanthanh3005/nodecasting:countdown",
 	"serviceName" : "nodecasting",
 	"ports" : ["5000:5000"],
-	"env" : ["PAUSE=5000/pause"]
+	"env" : ["PAUSE=5000/pause","EXTERNALPORT=5000"]
 }
 
 {
@@ -102,7 +109,9 @@ docker run -d -p 3000:3000 -v "$(pwd):/home/project:cached" theiaide/theia:next 
 
 ---------Go between
 
-docker run -p 80:80 -v /Users/vanthanhle/Desktop/Tools/ServiceMigration/gobetween:/etc/gobetween/conf/:rw yyyar/gobetween
+docker run -d -p 7000-7100:7000-7100 -p 6002:80 -p 6003:8888 -v /home/academic/vanle/servicemigration/gobetween:/etc/gobetween/conf/:rw --name gobetween yyyar/gobetween
+
+curl 10.7.20.89:6003
 
 
 Todo:

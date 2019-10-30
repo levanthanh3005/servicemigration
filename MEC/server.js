@@ -16,6 +16,9 @@ var externalPort = process.env.EXTERNALPORT || 3000;
 var SMPath = process.env.SMPath;
 var org = process.env.ORG;
 
+// var gobetween = process.env.GOBETWEEN;
+
+// var myIp = "";
 
 const app = express()
 app.use(bodyParser.json());
@@ -30,8 +33,8 @@ app.post('/start', function (req, res) {
   /*
     Post {
       DockerImage : <DockerImage>,
-      env : [[,]],
-      ports : [[,]],
+      env : [""],
+      ports : [","],
       network : network,
       serviceName : optional
       checkpoint : checkpoint name (in case of load)
@@ -42,16 +45,36 @@ app.post('/start', function (req, res) {
   console.log(req.body.checkpoint);
 
   if (req.body.checkpoint) {
-    startWithCheckpoint(req,res);
+    startWithCheckpoint(req,function(results){
+        res.send(results);
+        assignProxy(req.body);
+    });
   } else {
     normalStart(req,function(results){
         res.send(results);
+        assignProxy(req.body);
     }); 
   }
 
 })
 
-function startWithCheckpoint(req,res) {
+function assignProxy(serviceInfo) {
+  request.post("http://"+SMPath+"/assignProxy", {
+    json: {
+        serviceInfo : serviceInfo
+    }
+  }, (error, res, body) => {
+    if (error) {
+      console.log("Error in assigning proxy");
+      console.log(error);
+      return;
+    }
+    console.log(body);
+    console.log("Done with proxy")
+  })
+}
+
+function startWithCheckpoint(req,startcallback) {
   //Ref: https://www.criu.org/Docker
   //docker create
   //get container id
@@ -64,7 +87,7 @@ function startWithCheckpoint(req,res) {
     var cmd = 'docker inspect --format="{{.Id}}" '+req.body.serviceName;
     extras.execute(cmd, function(stdout, error) {
       if (error !== null) {
-        res.send({
+        startcallback({
           status : 0,
           description : error
         });  
@@ -82,7 +105,7 @@ function startWithCheckpoint(req,res) {
     console.log("Run:"+cmd);
     extras.execute(cmd, function(stdout, error) {
       if (error !== null) {
-        res.send({
+        startcallback({
           status : 0,
           description : error
         });  
@@ -101,7 +124,7 @@ function startWithCheckpoint(req,res) {
         console.log("Run:"+cmd)
         extras.execute(cmd, function(stdout, error) {
           if (error !== null) {
-            res.send({
+            startcallback({
               status : 0,
               description : error
             });  
@@ -109,7 +132,7 @@ function startWithCheckpoint(req,res) {
           }
 
           checkServiceIpExist(req.body.serviceName,function(results){
-            res.send(results);
+            startcallback(results);
           })
 
         });
@@ -119,7 +142,7 @@ function startWithCheckpoint(req,res) {
 
 }
 
-function normalCreate(req, startcallback) {
+function normalCreate(req, createcallback) {
   //fn = undefine => docker run
   //fn = "create" => create;
   console.log(req.body);
@@ -154,7 +177,7 @@ function normalCreate(req, startcallback) {
 
   extras.execute(cmd, function(stdout) {
     var containerId = stdout.trim();
-    startcallback({
+    createcallback({
       status : 1,
       serviceName : serviceName,
       containerId : containerId,
@@ -460,7 +483,8 @@ function getRunningContainers(callback){
         "ports" : lsPorts,
         "containerId" : inspectData["Config"]["Hostname"],
         "fullId" : inspectData["Id"],
-        "serviceName" : inspectData["Name"].split("/").pop()
+        "serviceName" : inspectData["Name"].split("/").pop(),
+        "status" : inspectData["State"]["Status"]
       });
       inspectEachContainer(index+1, runningContainers);
     }, false, true);
@@ -553,7 +577,11 @@ function registerToServiceManager(){
         throw new Error("Fail to register MEC");
         return;
       }
-      console.log("Register information")
+
+      // gobetween = body.gobetween;
+      // myIp = body.ip;
+
+      console.log("Register information");
     })
 }
 
