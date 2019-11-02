@@ -173,22 +173,22 @@ function runContainer(req, res, servicename, imagename, name, maincallback) {
             callback();
             return;
           }
-          // setHostMovie = "http://"+myIp+":5000/setHost?filename="+option+".mp4";
-          // // setHostMovie = "http://localhost:"+port+"/setHost?"+option;
-          // console.log(setHostMovie);
+          setHostMovie = "http://"+myIp+":5000/setHost?filename="+option+".mp4";
+          // setHostMovie = "http://localhost:"+port+"/setHost?"+option;
+          console.log(setHostMovie);
 
-          // request(setHostMovie, function (error, response, body) {
-          //   console.log('error:', error); // Print the error if one occurred
-          //   console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-          //   console.log('body:', body); // Print the HTML for the Google homepage.
-          //   if (body == undefined) {
-          //     // setTimeout(function(){
-          //     //   checkRequest();
-          //     //   return;
-          //     // },1000);
-          //     callback();
-          //     return;
-          //   } else {
+          request(setHostMovie, function (error, response, body) {
+            console.log('error:', error); // Print the error if one occurred
+            console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+            console.log('body:', body); // Print the HTML for the Google homepage.
+            if (body == undefined) {
+              // setTimeout(function(){
+              //   checkRequest();
+              //   return;
+              // },1000);
+              callback();
+              return;
+            } else {
 
               data = "http://"+edgeIp+":5000/getCurrentString";
               console.log("send link:"+data);
@@ -210,8 +210,8 @@ function runContainer(req, res, servicename, imagename, name, maincallback) {
               maincallback();
               maxRq = -1;
               clearTimeout(timeout);
-          //   }
-          // });
+            }
+          });
         });
       }
     }

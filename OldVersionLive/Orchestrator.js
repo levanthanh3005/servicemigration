@@ -69,10 +69,10 @@ app.post('/api/RegisterNode', function (req, res) {
   });
 })
 
-function angle(toNode, carVector) {
+function angle(fromNode, toNode, carVector) {
   roadVector = {
-    x : toNode.latitute - latitute,
-    y : toNode.longtitue - longtitue
+    x : toNode.latitute - fromNode.latitute,
+    y : toNode.longtitue - fromNode.longtitue
   }
   numerator = (roadVector.x * carVector.x + roadVector.y*carVector.y);
   denominator = Math.sqrt(roadVector.x*roadVector.x + roadVector.y*roadVector.y) * Math.sqrt(carVector.x*carVector.x + carVector.y*carVector.y)
@@ -108,7 +108,7 @@ function findNearestNeighbour(nodeName, thresholdDistance, x, y) {
     if (e!=nodeName) {
       d = distance(listNode[e].latitute,listNode[e].longtitue,listNode[nodeName].latitute,listNode[nodeName].longtitue);
       if (d <= thresholdDistance) {
-        theta = angle(listNode[e],{x: x, y:y});
+        theta = angle(listNode[nodeName],listNode[e],{x: x, y:y});
         if (sma > theta) {
           chooseNeighbour = listNode[e];
           sma = theta;
@@ -116,7 +116,8 @@ function findNearestNeighbour(nodeName, thresholdDistance, x, y) {
       }
     }
   }
-  console.log("sma:"+sma);
+  console.log("sma:"+sma +"  "+ (sma * 180 / 3.14));
+  console.log(chooseNeighbour);
   if (sma * 180 / 3.14 > 30) {
     chooseNeighbour = []
   }
@@ -286,7 +287,8 @@ function payService(servicename,account,callback){
           // console.log("payService timespend: "+ (new Date().getTime() - timenow));
           // body = JSON.parse(body);
           var body = {
-            imagelink : "levanthanh3005/nodecasting:countdown"
+            // imagelink : "levanthanh3005/nodecasting:countdown"
+            imagelink : "levanthanh3005/nodecasting:v0.2"
           }
           callback( true , body.imagelink);
         //   return;
@@ -390,6 +392,34 @@ function RegisterNodeInBc(nodeName,latitute, longtitue, serverIp, mecprovider, c
 }
 //END REST CALLS
 
+function testFindNearestNeighbour(){
+  listNode = {
+    "NODE_1" : { '$class': 'org.container.RegisterNode',
+    ni: 'NODE_1',
+    latitute: '100',
+    longtitue: '100',
+    ip: '10.7.20.89',
+    owner: 'resource:org.container.MECProvider#MECPROVIDER_1' },
+  "NODE_2": { '$class': 'org.container.RegisterNode',
+    ni: 'NODE_2',
+    latitute: '100',
+    longtitue: '105',
+    ip: '10.7.20.104',
+    owner: 'resource:org.container.MECProvider#MECPROVIDER_1' } };
+
+
+  node = getNearestNode(100, 100);
+  console.log(node);
+  console.log("Request to start container, forward request to:"+node.ip);
+
+  x = 0;
+  y = 2;
+  
+  nearestNeighbour = findNearestNeighbour(node.ni, 6, x, y);
+  console.log(nearestNeighbour);
+}
+
 app.listen(port, function () {
   console.log('Orchestrator app listening on port' + port + '!');
+//   testFindNearestNeighbour();
 });

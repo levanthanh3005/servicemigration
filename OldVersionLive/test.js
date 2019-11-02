@@ -2,7 +2,7 @@ const request = require('request');
 
 
 function startContainer1(callback){
-	request.get("http://10.7.20.89:3006/carservice/100/100/startcontainer/video/countdown/2/0",
+	request.get("http://10.7.20.89:3006/carservice/100/100/startcontainer/video/countdown/0/2",
 		function(err,httpResponse,body){
 			console.log(body);
 			callback(body);
@@ -10,7 +10,7 @@ function startContainer1(callback){
 }
 
 function startContainer2(callback){
-	request.get("http://10.7.20.89:3006/carservice/100/105/startcontainer/video/countdown/2/0",
+	request.get("http://10.7.20.89:3006/carservice/100/105/startcontainer/video/countdown/0/2",
 		function(err,httpResponse,body){
 			console.log(body);
 			callback(body);
@@ -51,11 +51,14 @@ startContainer1(function(link){
 						afterStart2();
 						return;
 					}
-					request.get(link,
-						function(err,httpResponse,body){
-							console.log(body);
-							watchVideo2(link,index+1);
-						})
+					setTimeout(function(){
+						request.get(link,
+							function(err,httpResponse,body){
+								console.log(body);
+								watchVideo2(link,index+1);
+							})
+					},5000);
+
 				}
 
 				watchVideo2(link,0);
@@ -73,11 +76,14 @@ startContainer1(function(link){
 			afterStart1();
 			return;
 		}
-		request.get(link,
+		setTimeout(function(){
+			request.get(link,
 			function(err,httpResponse,body){
 				console.log(body);
 				watchVideo1(link,index+1);
 			})
+		},5000);
+		
 	}
 	watchVideo1(link,0);
 })
