@@ -223,7 +223,8 @@ app.get('/carservice/:posx/:posy/startcontainer/:servicename/:option/:x/:y', fun
         lsSV[option] = {
           "servicename": servicename,
           "option": option,
-          "path" : path
+          "path" : path,
+          "nearestNeighbour" :nearestNeighbour
         }
         back();
       } else {

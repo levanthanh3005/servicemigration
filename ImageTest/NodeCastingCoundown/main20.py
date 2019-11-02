@@ -41,6 +41,12 @@ def my_route():
         cap = cv2.VideoCapture('/video/'+filename)
     return "done"
 
+@app.route('/restart', methods=['GET', 'POST'])
+def continueStream():
+    global isStop
+    isStop = False
+    return "done"
+
 @app.route('/stop', methods=['GET', 'POST'])
 def stopStream():
     global isStop
