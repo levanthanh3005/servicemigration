@@ -133,8 +133,7 @@ class MECextras {
 	  var command = req.body.command;
 	  var DockerImage = req.body.DockerImage;
 
-
-
+	  var self = this;
 
 	  command = command ? command : "";
 
@@ -156,7 +155,7 @@ class MECextras {
 
 	  console.log("Run:"+cmd);
 
-	  getContainerId(containerName, function(containerId) {
+	  self.getContainerId(containerName, function(containerId) {
 
 	  	if (!containerId) {
 		  extras.execute(cmd, function(stdout) {

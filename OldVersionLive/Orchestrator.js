@@ -174,7 +174,7 @@ app.post('/carservice/:posx/:posy/stopcontainer', function (req, res) {
           containerName : "video",
           pathPost : 'http://'+neighbourIp+':3005/uploadcheckpoint'
         }
-      }, (error, res, body) => {
+      }, (error, result, body) => {
           console.log("Copy done");
           console.log(body);
           lsSV[chooseService].checkpoint = body.checkpoint;

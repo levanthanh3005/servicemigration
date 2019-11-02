@@ -1,21 +1,13 @@
 Oldverison run:
 RESTIP=10.7.20.89 PORT=3006 node Orchestrator.js
 
-PORT=3005 NODENAME=NODE_1 SvIP=10.7.20.104 LONGTITUTE=100 LATITUTE=100 MECPROVIDER=MECPROVIDER_1 ORCHESTRATOR=10.7.20.89 node serverEdge.js
-startcontainer : 3211
-payment: 2358
-
-PORT=3005 NODENAME=NODE_2 SvIP=10.7.20.89 LATITUTE=105 LONGTITUTE=100 MECPROVIDER=MECPROVIDER_1 ORCHESTRATOR=10.7.20.89 node serverEdge.js
-Time pull: 46069
-Time start: 1563
-Migration time:  3438
-
 =>>>>>>>>>>>>>>>>
 node serverEdge.js
 
 docker run -it --rm \
 	-v /home/academic/vanle/servicemigration/:/todo \
 	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
 	-w /todo/OldVersionLive \
 	-v /tmp:/tmp \
 	-p 3005:3005 \
@@ -32,6 +24,7 @@ docker run -it --rm \
 docker run -it --rm \
 	-v /home/academic/vanle/servicemigration/:/todo \
 	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
 	-w /todo/OldVersionLive \
 	-v /tmp:/tmp \
 	-p 3005:3005 \
