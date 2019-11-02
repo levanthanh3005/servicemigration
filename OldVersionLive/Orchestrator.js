@@ -142,15 +142,55 @@ app.post('/carservice/:posx/:posy/stopcontainer', function (req, res) {
   console.log("Request Stop container");
   //{ services: [ 'http://10.10.168.10:5000/getCurrentString' ] }
   console.log(req.body);
-  request
-  .post("http://"+node.ip+":3005/stopcontainer", {
-    form:{
-      services: req.body.services
+  // request
+  // .post("http://"+node.ip+":3005/stopcontainer", {
+  //   form:{
+  //     services: req.body.services
+  //   }
+  // },function(err,httpResponse,body){
+  //   res.setHeader("Content-Type", "text/plain");
+  //   res.send(body);
+  // });
+
+  // var streammingPath = 'http://10.10.168.10:5000/getCurrentString';
+
+  var neighbourIp = "";
+  var chooseService = "";
+
+  var pauseRunningService = function(pauseLink){
+    request.get(pauseLink, 
+      function(err,httpResponse,body){
+        console.log("Stop current service:"+pauseLink);
+        setTimeout(function(){//<======FIX IT
+          startMigration();
+        }, 1000); 
+        // startMigration();
+      })
+  }
+
+  var startMigration = function(){     
+    request.post('http://'+node.ip+':3005/migration', {
+        json: {
+          containerName : "video",
+          pathPost : 'http://'+neighbourIp+':3005/uploadcheckpoint'
+        }
+      }, (error, res, body) => {
+          console.log("Copy done");
+          console.log(body);
+          lsSV[chooseService].checkpoint = body.checkpoint;
+          res.send("done");
+      })
+  }
+
+  var streammingPath = req.body.services[0];
+  for (var e in lsSV) {
+    if (lsSV[e].response == streammingPath) {
+      var pauseLink = "http://"+node.ip+":5000/pause";
+      neighbourIp = lsSV[e].nearestNeighbour.ip;
+      chooseService = e;
+      pauseRunningService(pauseLink);
     }
-  },function(err,httpResponse,body){
-    res.setHeader("Content-Type", "text/plain");
-    res.send(body);
-  });
+  }
 })
 
 // app.get('/carservice/:posx/:posy/startcontainer/:servicename/:option', function (req, res) {  
@@ -208,6 +248,13 @@ app.get('/carservice/:posx/:posy/startcontainer/:servicename/:option/:x/:y', fun
   if (!lsSV[option]) {
     payService(servicename,option,function(checked, path){
       if (checked==true) {
+        lsSV[option] = {
+          "servicename": servicename,
+          "option": option,
+          "path" : path,
+          "nearestNeighbour" :nearestNeighbour
+        }
+
         request
           .post('http://'+node.ip+':3005/startcontainer/', {
             form:{
@@ -218,14 +265,11 @@ app.get('/carservice/:posx/:posy/startcontainer/:servicename/:option/:x/:y', fun
           },function(err,httpResponse,body){
             res.setHeader("Content-Type", "text/plain");
             res.send(body);
+            lsSV[option].response = body;
+            console.log("After receive response");
+            console.log(lsSV);
           })
         
-        lsSV[option] = {
-          "servicename": servicename,
-          "option": option,
-          "path" : path,
-          "nearestNeighbour" :nearestNeighbour
-        }
         back();
       } else {
         res.setHeader("Content-Type", "text/plain");
@@ -234,16 +278,22 @@ app.get('/carservice/:posx/:posy/startcontainer/:servicename/:option/:x/:y', fun
       }
     })
   } else {
+    lsSV[option].nearestNeighbour = nearestNeighbour;
+
     request
     .post('http://'+node.ip+':3005/startcontainer/', {
       form:{
         "servicename": servicename,
         "option": option,
-        "path" : lsSV[option].path
+        "path" : lsSV[option].path,//image link
+        "checkpoint":lsSV[option].checkpoint
       }
     },function(err,httpResponse,body){
       res.setHeader("Content-Type", "text/plain");
       res.send(body);
+      lsSV[option].response = body;
+      console.log("After receive response");
+      console.log(lsSV);
     })
     back();
   }

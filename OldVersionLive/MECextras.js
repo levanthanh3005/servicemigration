@@ -1,5 +1,9 @@
 "use strict"; 
 const extras = require('./extras');
+const fs = require('fs');
+const bodyParser = require('body-parser');
+const request = require('request');
+var path = require('path');
 
 class MECextras {
 
@@ -22,13 +26,13 @@ class MECextras {
 		console.log(req.body.checkpoint);
 
 		if (req.body.checkpoint) {
-			startWithCheckpoint(req,function(results){
+			this.startWithCheckpoint(req,function(results){
 			    // res.send(results);
 			    // assignProxy(req.body);
 			    callback(results);
 			});
 		} else {
-			normalStart(req,function(results){
+			this.normalStart(req,function(results){
 			    // res.send(results);
 			    // assignProxy(req.body);
 			    callback(results);
@@ -60,22 +64,7 @@ class MECextras {
 	  //  /var/lib/docker/containers/<container-ID>/checkpoints/<checkpoint name>/
 	  //docker start --checkpoint=<checkpoint name> container-name
 	  console.log("Start with checkpoint");
-
-	  var getContainerId = function(callback){
-	    var cmd = 'docker inspect --format="{{.Id}}" '+req.body.containerName;
-	    extras.execute(cmd, function(stdout, error) {
-	      if (error !== null) {
-	        startcallback({
-	          status : 0,
-	          description : error
-	        });  
-	        return;
-	      }
-	      var containerId = stdout.trim();
-
-	      callback(containerId);
-	    });
-	  }
+	  var self = this;
 
 	  var extractCheckpoint = function(containerId, callback){
 	    var checkpoint = req.body.checkpoint;
@@ -93,7 +82,7 @@ class MECextras {
 	    });
 	  }
 
-	  normalCreate(req,function(results){
+	  self.normalCreate(req,function(results){
 	    var containerId = results.containerId;
 	    // getContainerId(function(containerId){
 	      console.log("containerId:"+containerId);
@@ -109,7 +98,7 @@ class MECextras {
 	            return;
 	          }
 
-	          checkServiceIpExist(req.body.containerName,function(results){
+	          self.checkServiceIpExist(req.body.containerName,function(results){
 	            startcallback(results);
 	          })
 
@@ -118,6 +107,19 @@ class MECextras {
 	    // })
 	  });
 
+	}
+
+	getContainerId(containerName, callback){
+		var cmd = 'docker inspect --format="{{.Id}}" '+containerName;
+		extras.execute(cmd, function(stdout, error) {
+		  if (error !== null) {
+		  	callback("")
+		    return;
+		  }
+		  var containerId = stdout.trim();
+
+		  callback(containerId);
+		});
 	}
 
 	normalCreate(req, createcallback) {
@@ -130,6 +132,8 @@ class MECextras {
 	  var network = req.body.network;
 	  var command = req.body.command;
 	  var DockerImage = req.body.DockerImage;
+
+
 
 
 	  command = command ? command : "";
@@ -152,15 +156,26 @@ class MECextras {
 
 	  console.log("Run:"+cmd);
 
+	  getContainerId(containerName, function(containerId) {
 
-	  extras.execute(cmd, function(stdout) {
-	    var containerId = stdout.trim();
-	    createcallback({
-	      status : 1,
-	      containerName : containerName,
-	      containerId : containerId,
-	      description : "container started"
-	    }); 
+	  	if (!containerId) {
+		  extras.execute(cmd, function(stdout) {
+		    var containerId = stdout.trim();
+		    createcallback({
+		      status : 1,
+		      containerName : containerName,
+		      containerId : containerId,
+		      description : "container started"
+		    }); 
+		  })
+		} else {
+		    createcallback({
+		      status : 1,
+		      containerName : containerName,
+		      containerId : containerId,
+		      description : "container started"
+		    }); 
+		}
 	  })
 	}
 
@@ -168,7 +183,8 @@ class MECextras {
 	  //fn = undefine => docker run
 	  //fn = "create" => create;
 	  console.log("Start as normal");
-	  console.log(req.body);
+      console.log(req.body);
+      var self = this;
 	  var lsEnv = req.body.env;
 	  var lsPorts = req.body.ports;
 	  var containerName = req.body.containerName;
@@ -193,19 +209,19 @@ class MECextras {
 	    ports+= " -e "+lsEnv[e];
 	  }
 
-	  var cmd = "docker run -d --rm --name "+containerName+network+ports+envs+" "+DockerImage+" "+command;
+	  var cmd = "docker run -i --rm --name "+containerName+network+ports+envs+" "+DockerImage+" "+command;
 
 	  console.log("Run:"+cmd);
 
 
 	  extras.execute(cmd, function(stdout) {
-	      checkServiceIpExist(containerName,startcallback)
+	      self.checkServiceIpExist(containerName,startcallback)
 	  }, true);
 	}
 
 	checkServiceIpExist(containerName,startcallback){
 	  var maxRq = 100;
-	  checkRequest = function(rqcallback) {
+	  var checkRequest = function(rqcallback) {
 	    console.log("Check ip exist");
 	    if (maxRq == -1) {
 	      return;
@@ -218,7 +234,7 @@ class MECextras {
 	    } else {
 	      var getIpCmd = "docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "+containerName;
 	      extras.execute(getIpCmd, function(stdout) {
-	        myIp = stdout.trim();
+	        var myIp = stdout.trim();
 	        // myIp = serverIp;
 	        maxRq--;
 	        // console.log("Get ip:"+myIp+" "+myIp.length);
@@ -238,8 +254,8 @@ class MECextras {
 	    }
 	  }
 
-	  callRequest = function(){
-	    timeout = setTimeout(function(){
+	  var callRequest = function(){
+	    setTimeout(function(){
 	      checkRequest(callRequest);
 	    },1000);
 	  }
@@ -285,7 +301,7 @@ class MECextras {
 
 
 	  var makeCheckpoint = function(callback) {
-	    cmd = "docker checkpoint create --checkpoint-dir /tmp "+containerName+" "+checkpoint;
+	    var cmd = "docker checkpoint create --checkpoint-dir /tmp "+containerName+" "+checkpoint;
 	//     cmd = "docker checkpoint create --leave-running --checkpoint-dir /tmp "+containerName+" "+checkpoint;
 	    extras.execute(cmd, function(stdout,error) {
 	      console.log("checkpoint "+checkpoint); 
@@ -390,7 +406,7 @@ class MECextras {
 	uploadCheckpoint(req, res){
 	  var checkpoint = path.basename(req.params.checkpoint);
 	  //Ref: https://gist.github.com/alepez/9205394
-	  filename = path.resolve(__dirname, "/tmp/"+checkpoint+".tar.gz");
+	  var filename = path.resolve(__dirname, "/tmp/"+checkpoint+".tar.gz");
 
 	  var dst = fs.createWriteStream(filename);
 	  req.pipe(dst);

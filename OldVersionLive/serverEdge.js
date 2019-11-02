@@ -3,6 +3,11 @@ const extras = require('./extras');
 
 const bodyParser = require('body-parser');
 const request = require('request');
+var path = require('path');
+var fs = require('fs');
+
+var http = require('http');
+
 
 const app = express()
 app.use(bodyParser.json());
@@ -115,7 +120,7 @@ app.post('/startcontainer/', function (req, res) {
 function startService(req, res) {
   var servicename = req.body.servicename
   var option = req.body.option
-  var name = servicename +"_"+ new Date().getTime();
+  var name = servicename;
   var timeout;
 
    
@@ -135,11 +140,22 @@ function startService(req, res) {
       // });
     // })
     //run container
-    req.body = {
-      "DockerImage" : imagename,
-      "serviceName" : "nodecasting",
-      "ports" : ["5000:5000"],
-      "env" : ["PAUSE=5000/stop","EXTERNALPORT=5000"]
+
+    if (stateMigrationList[servicename+"_"+option]) {
+      req.body = {
+        "DockerImage" : imagename,
+        "containerName" : servicename,
+        "ports" : ["5000:5000"],
+        "env" : ["PAUSE=5000/stop","EXTERNALPORT=5000"],
+        "checkpoint" : req.body.checkpoint
+      }
+    } else {
+      req.body = {
+        "DockerImage" : imagename,
+        "containerName" : servicename,
+        "ports" : ["5000:5000"],
+        "env" : ["PAUSE=5000/stop","EXTERNALPORT=5000"]
+      }
     }
     mecExtras.startService(req,function(results){
       // status : 1,
@@ -150,7 +166,7 @@ function startService(req, res) {
       data = "http://"+edgeIp+":5000/getCurrentString";
       console.log("send link:"+data);
       LinkList[data] = {
-        name : "nodecasting",
+        name : servicename,
         originalPath : "http://"+results.ip+":5000/",
         servicename : servicename,
         option: option
@@ -404,16 +420,14 @@ function checkDiskSpace(callback) {
 
 function createContainer(servicename, account, callback) {
 
-  var name = servicename +"_"+ new Date().getTime();
   var imagename = stateMigrationList[servicename+"_"+account].image;
-  var cmd = "docker create --name "+name+" --network bridge -p 5000:5000 " + imagename;
+  var cmd = "docker create --name "+servicename+" --network bridge -p 5000:5000 " + imagename;
 
   extras.execute(cmd, function(stdout) {
     // console.log("Pulled");
     // console.log(stdout);
     var containerId = stdout.trim();
     stateMigrationList[servicename+"_"+account].containerId = containerId;
-    stateMigrationList[servicename+"_"+account].containername = name;
     callback();
   });
 
@@ -443,6 +457,7 @@ app.post('/migpayment', function (req, res) {
     console.log("timespend for pulling:"+timespendPulling);
     createContainer(servicename, account,function(){
       console.log("Done create container");
+      console.log(stateMigrationList);
     })
   });
 
@@ -502,6 +517,14 @@ app.post('/gossip', function (req, res) {
   if (!isExisted) {
     listNeighbour.push(req.body);
   }
+})
+
+app.post('/uploadcheckpoint/:checkpoint', function (req, res) {
+  mecExtras.uploadCheckpoint(req,res);
+});
+
+app.post('/migration', function (req, res) {
+  mecExtras.migration(req,res);
 })
 
 //REST CALLS
@@ -632,7 +655,7 @@ function RegisterNodeInOrchestrator(callback){
 //END REST CALLS
 
 
-app.listen(port, function () {
+http.createServer(app).listen(port, function () {
     console.log('Example app listening on port' + port + ' in '+nodeName+'!');
     RegisterNodeInOrchestrator(function(check,body){
       console.log(check);
