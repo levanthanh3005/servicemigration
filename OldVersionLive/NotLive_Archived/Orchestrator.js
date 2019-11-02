@@ -288,7 +288,7 @@ function payService(servicename,account,callback){
           // body = JSON.parse(body);
           var body = {
             // imagelink : "levanthanh3005/nodecasting:countdown"
-            imagelink : "levanthanh3005/nodecasting:v0.2"
+            imagelink : "levanthanh3005/nodecasting:v0.2.countdown"
           }
           callback( true , body.imagelink);
         //   return;

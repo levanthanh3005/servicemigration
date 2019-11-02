@@ -138,8 +138,8 @@ function runContainer(req, res, servicename, imagename, name, maincallback) {
   var option = req.body.option
 
   // var cmd = "docker run -i --rm --name "+name+" -p "+port+":5000 --network bridge --volume=\"$HOME/Documents:/home/Documents:rw\" nodecasting"
-  // var cmd = "docker run -i --rm --name "+name+" --network bridge -p 5000:5000 " + imagename
-  var cmd = "docker run -i --rm --name "+name+" --network bridge -p 5000:5000 --volume=\"/tmp:/home/Documents:rw\" " + imagename;
+  var cmd = "docker run -i --rm --name "+name+" --network bridge -p 5000:5000 " + imagename;
+  // var cmd = "docker run -i --rm --name "+name+" --network bridge -p 5000:5000 --volume=\"/tmp:/home/Documents:rw\" " + imagename;
 
   console.log(cmd);
   var timeout;

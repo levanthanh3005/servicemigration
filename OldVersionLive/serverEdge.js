@@ -32,6 +32,10 @@ var mecprovider = process.env.MECPROVIDER
 const thresholdDistance = 6;
 
 
+const MECextras = require('./MECextras');
+
+mecExtras = new MECextras("","")
+
 app.get('/', function (req, res) {
   // res.render('index');
   res.redirect("/index");
@@ -122,24 +126,55 @@ function startService(req, res) {
     timespendPulling = 0;
     // pullImage(imagename, function(timespendPulling) {
     //   console.log("timespend for pulling:"+timespendPulling);
-      var timenow142 = new Date().getTime();
-      runContainer(req, res, servicename, imagename, name, function(){
-        var timespendToStartContainer = new Date().getTime() - timenow142;
-        console.log("For "+name+" timespend pull:"+timespendPulling+ " timespend start container:"+timespendToStartContainer);
-        var logs = "{'pull':'"+timespendPulling+"' , 'start':'"+timespendToStartContainer+"'}"
-        // logContainerState(servicename,option,"START",logs);
-      });
+      // var timenow142 = new Date().getTime();
+      // runContainer(req, res, servicename, imagename, name, function(){
+      //   var timespendToStartContainer = new Date().getTime() - timenow142;
+      //   console.log("For "+name+" timespend pull:"+timespendPulling+ " timespend start container:"+timespendToStartContainer);
+      //   var logs = "{'pull':'"+timespendPulling+"' , 'start':'"+timespendToStartContainer+"'}"
+      //   // logContainerState(servicename,option,"START",logs);
+      // });
     // })
     //run container
+    req.body = {
+      "DockerImage" : imagename,
+      "serviceName" : "nodecasting",
+      "ports" : ["5000:5000"],
+      "env" : ["PAUSE=5000/stop","EXTERNALPORT=5000"]
+    }
+    mecExtras.startService(req,function(results){
+      // status : 1,
+      // ip : myIp,
+      // containerName : containerName,
+      // description : "container started"
 
+      data = "http://"+edgeIp+":5000/getCurrentString";
+      console.log("send link:"+data);
+      LinkList[data] = {
+        name : "nodecasting",
+        originalPath : "http://"+results.ip+":5000/",
+        servicename : servicename,
+        option: option
+      };
+      // res.status(200).send(data);
+      try{
+        res.setHeader("Content-Type", "text/plain");
+        //res.set('Content-Type', 'text/plain');
+        res.send(data);
+        // response.end();
+      }catch(e) {
+        console.log("sth wrong");
+      }
+
+
+    })
   }
 }
 function runContainer(req, res, servicename, imagename, name, maincallback) {
   var option = req.body.option
 
   // var cmd = "docker run -i --rm --name "+name+" -p "+port+":5000 --network bridge --volume=\"$HOME/Documents:/home/Documents:rw\" nodecasting"
-  // var cmd = "docker run -i --rm --name "+name+" --network bridge -p 5000:5000 " + imagename
-  var cmd = "docker run -i --rm --name "+name+" --network bridge -p 5000:5000 --volume=\"/tmp:/home/Documents:rw\" " + imagename;
+  var cmd = "docker run -i --rm --name "+name+" --network bridge -p 5000:5000 " + imagename;
+  // var cmd = "docker run -i --rm --name "+name+" --network bridge -p 5000:5000 --volume=\"/tmp:/home/Documents:rw\" " + imagename;
 
   console.log(cmd);
   var timeout;
@@ -367,6 +402,23 @@ function checkDiskSpace(callback) {
   });
 }
 
+function createContainer(servicename, account, callback) {
+
+  var name = servicename +"_"+ new Date().getTime();
+  var imagename = stateMigrationList[servicename+"_"+account].image;
+  var cmd = "docker create --name "+name+" --network bridge -p 5000:5000 " + imagename;
+
+  extras.execute(cmd, function(stdout) {
+    // console.log("Pulled");
+    // console.log(stdout);
+    var containerId = stdout.trim();
+    stateMigrationList[servicename+"_"+account].containerId = containerId;
+    stateMigrationList[servicename+"_"+account].containername = name;
+    callback();
+  });
+
+};
+
 var stateMigrationList = []
 
 app.post('/migpayment', function (req, res) {
@@ -387,7 +439,11 @@ app.post('/migpayment', function (req, res) {
   }
 
   pullImage(image, function(timespendPulling) {
+    stateMigrationList[servicename+"_"+account].pulling = true;
     console.log("timespend for pulling:"+timespendPulling);
+    createContainer(servicename, account,function(){
+      console.log("Done create container");
+    })
   });
 
 })
