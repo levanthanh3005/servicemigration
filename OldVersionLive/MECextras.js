@@ -191,7 +191,6 @@ class MECextras {
 	  var command = req.body.command;
 	  var DockerImage = req.body.DockerImage;
 
-
 	  command = command ? command : "";
 
 	  containerName = containerName ? containerName : new Date().getTime();
@@ -220,6 +219,8 @@ class MECextras {
 
 	checkServiceIpExist(containerName,startcallback){
 	  var maxRq = 100;
+  	  var self = this;
+
 	  var checkRequest = function(rqcallback) {
 	    console.log("Check ip exist");
 	    if (maxRq == -1) {
@@ -242,12 +243,15 @@ class MECextras {
 	          rqcallback();
 	          return;
 	        } else {
-	          startcallback({
-	            status : 1,
-	            ip : myIp,
-	            containerName : containerName,
-	            description : "container started"
-	          });          
+
+	          self.checkServiceUp("http://"+myIp+":5000/testconnection",function(){
+		          startcallback({
+		            status : 1,
+		            ip : myIp,
+		            containerName : containerName,
+		            description : "container started"
+		          });   
+	          })       
 	        }
 	      });
 	    }
@@ -259,6 +263,20 @@ class MECextras {
 	    },1000);
 	  }
 	  checkRequest(callRequest);
+	}
+
+	checkServiceUp(link,callback) {
+		console.log("Check service up:"+link);
+		var rqck = function(){
+			request(link, function (error, response, body) {
+				if (error) {
+					rqck();
+				}
+				callback();
+				return;
+			})
+		}
+		rqck();
 	}
 
 	stopService(req,res) {

@@ -210,6 +210,7 @@ def gen(link):
 
 @app.route('/testconnection', methods=['GET', 'POST'])
 def testconnection():
+    isStop = False
     return "done"
 
 if __name__ == '__main__':

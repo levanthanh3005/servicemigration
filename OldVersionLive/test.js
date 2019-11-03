@@ -51,13 +51,13 @@ startContainer1(function(link){
 						afterStart2();
 						return;
 					}
-					setTimeout(function(){
+					// setTimeout(function(){
 						request.get(link,
 							function(err,httpResponse,body){
-								console.log(body);
+								console.log(body.substring(body.length-10,body.length-1));
 								watchVideo2(link,index+1);
 							})
-					},5000);
+					// },5000);
 
 				}
 
@@ -76,13 +76,13 @@ startContainer1(function(link){
 			afterStart1();
 			return;
 		}
-		setTimeout(function(){
+		// setTimeout(function(){
 			request.get(link,
 			function(err,httpResponse,body){
-				console.log(body);
+				console.log(body.substring(body.length-10,body.length-1));
 				watchVideo1(link,index+1);
 			})
-		},5000);
+		// },5000);
 		
 	}
 	watchVideo1(link,0);
