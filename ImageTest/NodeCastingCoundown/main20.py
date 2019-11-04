@@ -9,15 +9,17 @@ import csv
 app = Flask(__name__)
 
 host = ""
-cap = cv2.VideoCapture();
+cap = cv2.VideoCapture()
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 requestCount = 0
 dataLogs = []
 isContinue = True
-frameCount = 0
+# frameCount = 0
 filename = ""
 isStop = False
+
+cap = cv2.VideoCapture('video/countdown.mp4')
 
 @app.route('/setHost', methods=['GET', 'POST'])
 def my_route():
@@ -37,8 +39,8 @@ def my_route():
     if host != 'none' :
         cap = cv2.VideoCapture('http://' + host)
     else :
-        print('choose filename');
-        cap = cv2.VideoCapture('/video/'+filename)
+        print('choose filename')
+        cap = cv2.VideoCapture('/todo/video/'+filename)
     return "done"
 
 @app.route('/restart', methods=['GET', 'POST'])
@@ -72,11 +74,11 @@ def getCurrentImage():
 def getCurrentString():
     # img_str = cv2.imencode('.jpg', img)[1].tostring()
     if (isStop) :
-        return "stop";
+        return "stop"
 
     global cap
     global isContinue
-    global frameCount
+    # global frameCount
 
     # ratio = request.args.get('resize', default=1, type=float)
     # retval, buffer = cv2.imencode('.jpg', cv2.imread('loading.jpg'))
@@ -85,15 +87,17 @@ def getCurrentString():
     # return "{\"timesleep\":\"0.05\",\"data\":\"" + img_str + "\"}"
     try:
         if isContinue == False :
+            print "Return test: isContinue == False"
             return text_test()
-        if frameCount >= 999:
-            return text_test()
+        # if frameCount >= 999:
+        #     print "Return test: frameCount >= 999"
+        #     return text_test()
         ret, frame = cap.read()
-        frameCount = frameCount + 1
+        # frameCount = frameCount + 1
         # small = cv2.resize(frame, (0, 0), fx=ratio, fy=ratio)
 
         if not ret:
-            print("Error")
+            print "Error not return of video"
             isContinue = False
             return text_test()
 
@@ -108,8 +112,10 @@ def getCurrentString():
         currentTime = str(current_milli_time())
         # dataLogs.append([currentTime, str(requestCount)])
         return "{" + img_str + "|"+ currentTime +"|"+ str(requestCount)+ "}"
-    except:
+    except Exception as e:
         isContinue = False
+        print "Exception"
+        print str(e)
         return text_test()
 
 @app.route('/getCurrentBinary', methods=['GET', 'POST'])
@@ -161,6 +167,7 @@ def saveLogs():
 
 @app.route('/text_test')
 def text_test():
+    print "Return text loading!!!!!!!"
     #img = cv2.imread('messi5.jpg',0)
     ratio = request.args.get('resize', default=1, type=float)
     small = cv2.resize(cv2.imread('loading.jpg'), (0, 0), fx=ratio, fy=ratio)
@@ -201,7 +208,7 @@ def gen(link):
         ret, frame = cap.read()
 
         if not ret:
-            print("Error: failed to capture image")
+            print "Error: failed to capture image"
             break
 
         cv2.imwrite('frame.jpg', frame)
@@ -210,8 +217,36 @@ def gen(link):
 
 @app.route('/testconnection', methods=['GET', 'POST'])
 def testconnection():
+    global isStop
     isStop = False
     return "done"
 
+@app.route('/streaming', methods=['GET', 'POST'])
+def streaming():
+    print("Streaming")
+    return Response(generate(),
+        mimetype = "multipart/x-mixed-replace; boundary=frame")
+
+def generate():
+    """Video streaming generator function."""
+    # link = 'http://'+host
+    # print(link)
+    global isStop
+
+    while (isStop==False) :
+        ret, frame = cap.read()
+        
+        # print(isStop)
+
+        if not ret:
+            print("Error: failed to capture image")
+            break
+
+        cv2.imwrite('frame.jpg', frame)
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + open('frame.jpg', 'rb').read() + b'\r\n')
+
+
 if __name__ == '__main__':
+    print "Start video streaming"
     app.run(host='0.0.0.0', debug=True)
