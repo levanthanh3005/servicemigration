@@ -4,6 +4,8 @@ RESTIP=10.7.20.89 PORT=3006 node Orchestrator.js
 =>>>>>>>>>>>>>>>>
 node serverEdge.js
 
+In 10.7.20.89
+
 docker run -it --rm \
 	-v /home/academic/vanle/servicemigration/:/todo \
 	-v /var/run/docker.sock:/var/run/docker.sock \
@@ -20,6 +22,8 @@ docker run -it --rm \
 	-e EDGEIP=10.7.20.89 \
 	--name NODE_1 \
 	levanthanh3005/dockernode:v0.1 sh
+
+In 10.7.20.104
 
 docker run -it --rm \
 	-v /home/academic/vanle/servicemigration/:/todo \
