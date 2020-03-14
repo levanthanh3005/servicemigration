@@ -1,3 +1,137 @@
 https://www.redhat.com/en/blog/container-migration-around-world
 https://criu.org/Main_Page
 https://github.com/opencontainers/runc
+https://cri-o.io
+https://github.com/alibaba/runc
+http://containers622.rssing.com/chan-52379557/all_p4.html
+https://lisas.de/~adrian/pdf/lazy-process-migration.pdf
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6480341/
+https://github.com/cyrillos/criu/tree/master/scripts/build
+
+apt-get install criu
+apt-get install runc
+
+docker run -it --rm \
+	-v /home/academic/vanle/servicemigration:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
+	-v /sys/fs/cgroup/:/sys/fs/cgroup/:rw \
+	-v /tmp:/tmp \
+	-w /todo/MEC \
+	-p 3005:3005 \
+	-e ORG=Unibz \
+	-e EXTERNALPORT=3005 \
+	-e PORT=3005 \
+	-e SMPath=10.7.20.89:3001 \
+	--name MEC \
+	nodemec sh
+
+levanthanh3005/nodecasting:v0.2.countdown.server
+
+
+mkdir containerroots
+cd containerroots
+
+mkdir videoserver
+cd videoserver
+
+mkdir image
+mkdir parent
+
+cd image
+mkdir rootfs
+
+docker export $(docker create levanthanh3005/nodecasting:v0.2.countdown.server) | tar -C rootfs -xvf -
+
+runc spec
+
+cd /home/academic/vanle/containerroots/videoserver/image/ && runc run -d videoserverrun &> /dev/null < /dev/null
+
+runc run videoserverrun
+
+#Check:   http://10.7.20.89:5000/testconnection
+
+runc delete videoserverrun -f
+
+#pre_dump
+
+runc checkpoint --pre-dump videoserverrun
+
+#checkpoint
+runc checkpoint --image-path /home/academic/vanle/containerroots/videoserver/image \
+	--parent-path /home/academic/vanle/containerroots/videoserver/parent videoserverrun
+
+runc checkpoint --image-path /home/academic/vanle/containerroots/videoserver/image videoserverrun #WORK
+runc checkpoint videoserverrun #WORK
+
+
+criu dump -D /home/academic/vanle/containerroots/videoserver/tmp -v4 -j -t 11579 
+
+#Restore
+
+runc restore -d --image-path /home/academic/vanle/containerroots/videoserver/image \
+	--work-path /home/academic/vanle/containerroots/videoserver/parent videoserverrun
+runc restore -d videoserverrun
+
+-----------
+criu pre-dump -t 11579
+
+----------busy box
+runc run -b /home/academic/vanle/containerroots/busybox/image/ -d busybox &> /dev/null < /dev/null
+
+runc run -d busybox &> /dev/null < /dev/null
+
+#Check:   http://10.7.20.89:5000/testconnection
+
+runc delete busybox -f
+
+#pre_dump
+
+runc checkpoint --pre-dump --image-path /home/academic/vanle/containerroots/busybox/parent busybox
+
+runc checkpoint --pre-dump --image-path parent busybox
+
+#checkpoint
+runc checkpoint --image-path /home/academic/vanle/containerroots/busybox/parent busybox
+
+runc checkpoint --image-path iamgecp --parent-path parent busybox
+
+runc checkpoint busybox
+
+runc restore -d busybox
+
+runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver
+
+--------------------
+
+./runContainer.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver videoserverConfig.json
+./normalCheckPoint.sh videoserver
+./normalRestore.sh videoserver
+./predumpCheckPoint.sh videoserver
+./normalRestore.sh videoserver
+
+10.7.20.89:
+runc checkpoint --parent-path ../predump --lazy-pages --page-server 0.0.0.0:27 videoserver
+runc run -d videoserver8 &> /dev/null < /dev/null
+
+10.7.20.104:
+
+criu lazy-pages --page-server --address 10.7.20.89 --port 27
+
+criu lazy-pages --page-server --address 10.7.20.89 --port 27
+
+runc checkpoint --image-path image --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver
+
+runc restore -d --lazy-pages videoserver
+criu restore -D ../parent  --shell-job --lazy-pages
+
+criu dump -t 20204 -D ../predump --lazy-pages --address 0.0.0.0 --port 27 --shell-job
+
+python migrate.py videoserver vanle@10.7.20.104 true true
+
+
+apk update && apk add gcc bash  build-base  ccache  coreutils  git  libaio-dev  libcap-dev  libnet-dev  libnl3-dev  pkgconfig  protobuf-c-dev  protobuf-dev  python  sudo
+
+apk add py-yaml py-pip py2-future ip6tables iptables iproute2 tar bash go e2fsprogs asciidoc xmlto
+
+apk add libnet libnl3 musl protobuf-c

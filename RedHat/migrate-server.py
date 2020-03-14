@@ -52,7 +52,7 @@ def clientthread(conn, addr):
                 while down:
                     try:
                         test_socket = socket.socket()
-                        test_socket.bind(('192.168.122.99',23456))
+                        test_socket.bind(('10.7.20.89',23456))
                     except:
                         continue
                     down = False

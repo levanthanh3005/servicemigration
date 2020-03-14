@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import distutils.util
 
-runc_base = "/runc/containers/"
+runc_base = "/home/academic/vanle/containerroots/"
 
 lazy = False
 pre = False
@@ -140,13 +140,13 @@ if pre:
     pre_dump()
     xfer_pre_dump()
 real_dump(pre, lazy)
-give_ip()
+# give_ip()
 xfer_final()
 
 cs = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 cs.connect((dest, 8888))
 
-input = [cs,sys.stdin]
+# input = [cs,sys.stdin]
 
 
 cs.send('{ "restore" : { "path" : "' + base_path + '", "name" : "' + container + '" , "image_path" : "' + image_path + '" , "lazy" : "' + str(lazy) + '" } }')
