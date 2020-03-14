@@ -15,7 +15,7 @@ mkdir rootfs
 # docker export $(docker create levanthanh3005/nodecasting:v0.2.countdown.server) | tar -C rootfs -xvf -
 docker export $(docker create $CONTAINERNAME) | tar -C rootfs -xvf -
 
-cp $CONFIG $HOME/containerroots/$NAME/image/config.json
+cp $HOME/containerroots/script/$CONFIG $HOME/containerroots/$NAME/image/config.json
 
 runc run -d $NAME &> /dev/null < /dev/null
 

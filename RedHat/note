@@ -26,6 +26,9 @@ docker run -it --rm \
 	--name MEC \
 	nodemec sh
 
+
+docker run -d -p 3000:3000 -v "$(pwd):/home/project:cached" theiaide/theia:next theia browsertheia desktop 
+
 levanthanh3005/nodecasting:v0.2.countdown.server
 
 
@@ -138,5 +141,4 @@ apk add libnet libnl3 musl protobuf-c
 
 ------------------------
 
-ssh -i "awsVm1.pem" ec2-user@ec2-52-91-71-18.compute-1.amazonaws.com #machine1
-ssh -i "awsVm1.pem" ec2-user@ec2-3-81-130-30.compute-1.amazonaws.com #machine2
+ssh -i awsVm1.pem ec2-user@ec2-34-201-251-142.compute-1.amazonaws.com
