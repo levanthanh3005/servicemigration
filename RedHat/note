@@ -135,3 +135,8 @@ apk update && apk add gcc bash  build-base  ccache  coreutils  git  libaio-dev  
 apk add py-yaml py-pip py2-future ip6tables iptables iproute2 tar bash go e2fsprogs asciidoc xmlto
 
 apk add libnet libnl3 musl protobuf-c
+
+------------------------
+
+ssh -i "awsVm1.pem" ec2-user@ec2-52-91-71-18.compute-1.amazonaws.com #machine1
+ssh -i "awsVm1.pem" ec2-user@ec2-3-81-130-30.compute-1.amazonaws.com #machine2
