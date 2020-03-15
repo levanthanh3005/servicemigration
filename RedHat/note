@@ -141,4 +141,15 @@ apk add libnet libnl3 musl protobuf-c
 
 ------------------------
 
-ssh -i awsVm1.pem ec2-user@ec2-34-201-251-142.compute-1.amazonaws.com
+ssh -i "awsVm1.pem" ec2-user@ec2-3-88-20-91.compute-1.amazonaws.com
+scp -i awsVm1.pem *.sh ec2-user@ec2-3-88-20-91.compute-1.amazonaws.com:/home/ec2-user/script/
+scp -i awsVm1.pem *.json ec2-user@ec2-3-88-20-91.compute-1.amazonaws.com:/home/ec2-user/script/
+
+----
+
+cd /home/ec2-user/ && mkdir script
+sudo -s
+cp -r /home/ec2-user/script /root/containerroots/script
+cd /root/containerroots/script
+
+./runContainer.sh busybox busybox busyboxConfig.json
