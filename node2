@@ -79,3 +79,10 @@ tar xzvf /tmp/cp1572347610581.tar.gz -C /var/lib/docker/containers/7c03472970c30
 docker checkpoint create --checkpoint-dir /tmp nodecasting ck
 docker checkpoint create nodecasting ck
 docker start --checkpoint=cp1572347610581  nodecasting
+
+
+docker run -it --rm \
+	-v /home/academic/vanle/servicemigration/:/todo \
+	-w /todo \
+	--privileged \
+	mecnest
