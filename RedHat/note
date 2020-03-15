@@ -103,6 +103,10 @@ runc checkpoint busybox
 
 runc restore -d busybox
 
+runc checkpoint videoserver
+
+runc checkpoint --pre-dump --image-path ../predump videoserver
+
 runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver
 
 --------------------
@@ -153,3 +157,10 @@ cp -r /home/ec2-user/script /root/containerroots/script
 cd /root/containerroots/script
 
 ./runContainer.sh busybox busybox busyboxConfig.json
+
+docker run -it --rm \
+	-v /home/academic/vanle/servicemigration/:/todo \
+	-p 5005:5000 \
+	-w /todo \
+	--privileged \
+	mecnest

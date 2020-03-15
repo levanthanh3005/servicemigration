@@ -80,9 +80,7 @@ docker checkpoint create --checkpoint-dir /tmp nodecasting ck
 docker checkpoint create nodecasting ck
 docker start --checkpoint=cp1572347610581  nodecasting
 
-
 docker run -it --rm \
-	-v /home/academic/vanle/servicemigration/:/todo \
-	-w /todo \
-	--privileged \
-	mecnest
+	-t --privileged \
+	--rm -v /lib/modules:/lib/modules:ro \
+	runc_dev:master bash
