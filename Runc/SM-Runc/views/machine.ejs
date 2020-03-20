@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300' rel='stylesheet' type='text/css'>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  </head>
+
+  <script type="text/javascript" src="/js/draganddrop.js"></script>
+  <script type="text/javascript" src="/js/loadData.js"></script>
+
+  <body>
+    <h2 style="text-align: center" class="titleHeader">Service manager</h2>
+    <div class="container" id="container">
+      <% for(s in lsMEC) {%>
+      <div class="MEC" id=<%="MEC_"+s %> ondrop="drop(event)" ondragover="allowDrop(event)">
+        <div class="MECIp" id=<%="MECIp_"+s %> ><%= lsMEC[s].ip %></div>
+        <div class="Services">
+          <% for(ss in lsMEC[s].lsService) {%>
+            <div class="Service" id=<%="Service_"+s+"_"+ss %> draggable="true" ondragstart="drag(event)">
+              <div>
+                <%= lsMEC[s].lsService[ss].serviceName %>
+              </div>
+              <div>
+                <%= lsMEC[s].lsService[ss].DockerImage %>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      </div>
+      <% } %>
+     <br class="clearBoth" />
+    </div>
+    <br/>
+    <hr/>
+    <div class="controller" id="MECcontroller">
+
+<!--       <div>
+        <p class="textcenter">Deploy a service</p>
+        <textarea class="serviceContent servicect_0_1"></textarea>
+        <div class="deploySvBtn servicect_0_1">Deploy</div>
+      </div>
+ -->
+      <div class="reboot">
+        <a href="/reboot/-1">PLEASE PAY ATTENTION TO REBOOT SERVICE MANAGER</a>
+      </div>
+    </div>
+    <script type="text/javascript">
+      $(".MECIp").click(function(){
+
+        stopLoadingData = true;
+
+        var MECIndex = $(this).attr("id").split("_").pop();
+        MECIndex = parseInt(MECIndex);
+
+        var controller = 
+        '<div>'+
+        '  <p class="textcenter">Deploy a service</p>'+
+        '  <textarea class="serviceContent MEC_'+MECIndex+'"></textarea>'+
+        '  <div class="deploySvBtn MEC_'+MECIndex+'">Deploy</div>'+
+        '</div>'+
+
+        '<div class="reboot">'+
+        '  <a href="/reboot/'+MECIndex+'">PLEASE PAY ATTENTION TO REBOOT</a>'+
+        '</div>';
+        $("#MECcontroller").html(controller);
+
+        $(".deploySvBtn").click(function(){
+          var MECIndex = $(this).attr("class").split("_").pop();
+          MECIndex = parseInt(MECIndex);
+          var content = $(".serviceContent").val();
+          content = JSON.parse(content);
+
+          $.post('/start', {
+                  MECIndex: MECIndex,
+                  service : content
+              }
+          )
+          .then(
+              function success(name) {
+                console.log("done");
+                location.reload();
+              },
+
+              function fail(data, status) {
+                console.log("fail");
+              }
+          );
+        })
+
+      }) 
+
+      $(".Service").click(function(){
+        var MECIndex = $(this).attr("id").split("_")[1];
+        var serviceIndex = $(this).attr("id").split("_")[2];
+
+        stopLoadingData = true;
+
+        var controller = '<div>'+
+        '  <div class="stopService service_'+MECIndex+'_'+serviceIndex+'">Stop</div>'+
+        '</div>';
+
+        $("#MECcontroller").html(controller);
+
+        $(".stopService").click(function(){
+          var MECIndex = $(this).attr("class").split("_")[1];
+          var serviceIndex = $(this).attr("class").split("_")[2];
+
+          $.post('/stop', {
+                  MECIndex: MECIndex,
+                  serviceIndex : serviceIndex
+              }
+          )
+          .then(
+              function success(name) {
+                console.log("done");
+                location.reload();
+              },
+
+              function fail(data, status) {
+                console.log("fail");
+              }
+          );
+        })
+
+      }) 
+    </script>
+  </body>
+</html>

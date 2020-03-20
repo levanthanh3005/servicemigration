@@ -1,0 +1,139 @@
+Questions:
+1) Whether the ongoing service should be migrated out of the current edge server that hosts this service
+2) if the answer is yes, then which edge server the service should be migrated to
+3)How the service migration process should be carried out, considering the overhead and QoS requirement
+
+https://mirror.kumi.systems/videolan/vlc/3.0.8/vlc-3.0.8.tar.xz
+
+Enable experiment in ubuntu:
+echo "{\"experimental\": true}" >> /etc/docker/daemon.json & sudo systemctl restart docker
+
+todo:
+- MEC start
+- MEC stop
+- MEC migration : 
+++ local migration: move locally
+++ external migration: submit to service manager to pull the file
+
+----Service mananger
+docker run -it --rm \
+	-v /Users/vanthanhle/Desktop/Tools/ServiceMigration:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /tmp:/tmp \
+	-w /todo/Runc/SM-Runc \
+	-p 3001:3001 \
+	-e EXTERNALPORT=3001 \
+	-e PORT=3001 \
+	-e GOBETWEEN=10.7.20.89:6003 \
+	--name SM \
+	levanthanh3005/dockernode:v0.1 sh
+
+docker run -it --rm \
+	-v /home/academic/vanle/servicemigration/:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-w /todo/Runc/SM-Runc \
+	-p 3001:3001 \
+	-e EXTERNALPORT=3001 \
+	-e PORT=3001 \
+	-e GOBETWEEN=10.7.20.89:6003 \
+	--name SM \
+	-e PROXYPORT=7000 \
+	-e MYREALIP=10.7.20.89 \
+	levanthanh3005/dockernode:v0.1 sh
+
+docker run -it --rm \
+	-p 3001:3001 \
+	-e EXTERNALPORT=3001 \
+	-e PORT=3001 \
+	-e GOBETWEEN=10.7.20.89:6003 \
+	-e PROXYPORT=7000 \
+	-e MYIP=10.7.20.89 \
+	--name SM \
+	levanthanh3005/servicemanager:v0.1
+
+
+PORT=3001  node server.js
+
+----MEC
+docker run -it --rm \
+	-v /home/academic/vanle/servicemigration:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
+	-v /tmp:/tmp \
+	-w /todo/MEC \
+	-p 3005:3005 \
+	-e ORG=Unibz \
+	-e EXTERNALPORT=3005 \
+	-e PORT=3005 \
+	-e SMPath=10.7.20.89:3001 \
+	--name MEC \
+	levanthanh3005/dockernode:v0.1 sh 
+
+docker run -it --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
+	-v /tmp:/tmp \
+	-p 3005:3005 \
+	-e ORG=Unibz \
+	-e EXTERNALPORT=3005 \
+	-e PORT=3005 \
+	-e SMPath=10.7.20.89:3001 \
+	--name MEC \
+	levanthanh3005/mec:v0.1
+
+docker run -it --rm \
+	-v /home/academic/vanle/servicemigration:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
+	-v /tmp:/tmp \
+	-w /todo/MEC \
+	-p 3005:3005 \
+	-e ORG=Unibz \
+	-e EXTERNALPORT=3005 \
+	-e PORT=3005 \
+	-e SMPath=10.7.20.89:3001 \
+	--name MEC \
+	nodemec sh
+
+------Test:
+{
+	"DockerImage" : "levanthanh3005/busyboxtest",
+	"serviceName" : "looper"
+}
+
+{
+	"DockerImage" : "levanthanh3005/nodecasting:countdown",
+	"serviceName" : "nodecasting",
+	"ports" : ["5000:5000"],
+	"env" : ["PAUSE=5000/pause","EXTERNALPORT=5000"]
+}
+
+{
+	"DockerImage" : "levanthanh3005/notificationreceiver:v0.1",
+	"serviceName" : "notificationreceiver",
+	"ports" : ["3003:3003"],
+	"env" : ["PORT=3003"]
+}
+{
+	"DockerImage" : "levanthanh3005/notificationpush:v0.1",
+	"serviceName" : "notificationpush",
+	"env" : ["PUSHPATH=http://10.7.20.89:3003/notification"]
+}
+--------Startup:
+docker run -d -p 3000:3000 -v "$(pwd):/home/project:cached" theiaide/theia:next theia browsertheia desktop 
+
+---------Go between
+
+docker run -d -p 7000-7100:7000-7100 -p 6002:80 -p 6003:8888 -v /home/academic/vanle/servicemigration/gobetween:/etc/gobetween/conf/:rw --name gobetween yyyar/gobetween
+
+curl 10.7.20.89:6003
+
+
+Todo:
+- Test the code of server works or not
+- make ssh without password in macos
+- make criu run on macos: 
+https://github.com/boucher/criu-for-mac/blob/master/Dockerfile
+- make a proxy like haproxy to configure the request from user, so when the user change node, the request change as well, use one server for all request, extend the code of dockercloud/haproxy
+- make service manager to control request come and out
+- simulate the roaming by make the response delay

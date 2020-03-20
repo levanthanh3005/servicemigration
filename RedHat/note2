@@ -1,0 +1,62 @@
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	-p 5000:5000 \
+	-v /home/academic/vanle/servicemigration/RedHat:/root/containerroots/script \
+	-v /home/academic/vanle/containerroots/videoserver:/root/containerroots/test:rw \
+	--name server1 \
+	levanthanh3005/runc:v0.1 bash
+
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	-p 5003:5000 \
+	-v /home/academic/vanle/servicemigration/RedHat:/root/containerroots/script \
+	-v /home/academic/vanle/containerroots/videoserver/image:/root/containerroots/test:rw \
+	--name server2 \
+	runctest bash
+
+Ref:https://github.com/opencontainers/runtime-spec/blob/master/config.md
+
+In server1:
+
+cd /root/containerroots/script
+
+./runContainer.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver videoserverConfig.json
+
+cd /root/containerroots/videoserver/image
+
+runc checkpoint --pre-dump --image-path ../predump videoserver
+
+runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver
+runc checkpoint --parent-path ../predump --lazy-pages --tcp-established --page-server localhost:27 videoserver
+
+In host:
+
+rm -rf /tmp/tmp/
+root@5gcarmen:~# docker cp b2bd3bb18606:/root/containerroots/videoserver /tmp/tmp/
+root@5gcarmen:~# docker cp /tmp/tmp/ 0c5380d26f85:/root/containerroots/videoserver
+
+In server2:
+cd /root/containerroots/videoserver/checkpoint
+
+criu lazy-pages --page-server --address 172.17.0.3 --port 27 -vv
+
+In another tab
+docker exec -it server2 bash
+cd /root/containerroots/videoserver/image
+
+runc --criu criu restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
+
+
+-------Some code work:
+runc run -d videoserver &> /dev/null < /dev/null
+runc checkpoint videoserver
+runc checkpoint --tcp-established videoserver
+runc checkpoint --tcp-established videoserver
+runc checkpoint --tcp-established --leave-running videoserver
+
+runc checkpoint --pre-dump --image-path ../predump videoserver
+runc checkpoint --parent-path ../predump --lazy-pages --tcp-established --leave-running --page-server localhost:27 videoserver

@@ -1,25 +1,19 @@
 {
 	"ociVersion": "1.0.1-dev",
 	"process": {
-		"terminal": false,
+		"terminal": true,
 		"user": {
 			"uid": 0,
 			"gid": 0
 		},
 		"args": [
-			"python",
-            "main.py"
+			"sh"
 		],
 		"env": [
 			"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-            "RATIO=0.3",
-            "VIDEO_PATH=",
-            "MODE=SERVER",
-            "INTERNALPORT=5000",
-            "BUFFERSIZE=3",
-            "RATIO=0.3"
+			"TERM=xterm"
 		],
-		"cwd": "/todo",
+		"cwd": "/",
 		"capabilities": {
 			"bounding": [
 				"CAP_AUDIT_WRITE",
@@ -58,7 +52,7 @@
 	},
 	"root": {
 		"path": "rootfs",
-		"readonly": false
+		"readonly": true
 	},
 	"hostname": "runc",
 	"mounts": [
@@ -141,7 +135,7 @@
 		"resources": {
 			"devices": [
 				{
-					"allow": true,
+					"allow": false,
 					"access": "rwm"
 				}
 			]
@@ -149,6 +143,9 @@
 		"namespaces": [
 			{
 				"type": "pid"
+			},
+			{
+				"type": "network"
 			},
 			{
 				"type": "ipc"
@@ -161,10 +158,7 @@
 			}
 		],
 		"maskedPaths": [
-			"/proc/acpi",
-			"/proc/asound",
 			"/proc/kcore",
-			"/proc/keys",
 			"/proc/latency_stats",
 			"/proc/timer_list",
 			"/proc/timer_stats",
@@ -173,6 +167,7 @@
 			"/proc/scsi"
 		],
 		"readonlyPaths": [
+			"/proc/asound",
 			"/proc/bus",
 			"/proc/fs",
 			"/proc/irq",

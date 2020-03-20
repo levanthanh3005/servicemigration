@@ -18,6 +18,8 @@ docker export $(docker create $CONTAINERNAME) | tar -C rootfs -xvf -
 cp $HOME/containerroots/script/$CONFIG $HOME/containerroots/$NAME/image/config.json
 
 runc run -d $NAME &> /dev/null < /dev/null
+#runc run -d videoserver &> /dev/null < /dev/null
+
 
 runc list
 

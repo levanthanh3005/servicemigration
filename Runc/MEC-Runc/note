@@ -1,0 +1,55 @@
+----MEC
+docker run -it --rm \
+	-v /home/academic/vanle/servicemigration:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
+	-v /tmp:/tmp \
+	-w /todo/MEC \
+	-p 3005:3005 \
+	-e ORG=Unibz \
+	-e EXTERNALPORT=3005 \
+	-e PORT=3005 \
+	-e SMPath=10.7.20.89:3001 \
+	--name MEC \
+	levanthanh3005/dockernode:v0.1 sh 
+
+docker run -it --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
+	-v /tmp:/tmp \
+	-p 3005:3005 \
+	-e ORG=Unibz \
+	-e EXTERNALPORT=3005 \
+	-e PORT=3005 \
+	-e SMPath=10.7.20.89:3001 \
+	--name MEC \
+	levanthanh3005/mec:v0.1
+
+docker run -it --rm \
+	-v /home/academic/vanle/servicemigration:/todo \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /var/lib/docker/containers:/dockercontainer \
+	-v /tmp:/tmp \
+	-w /todo/MEC \
+	-p 3005:3005 \
+	-e ORG=Unibz \
+	-e EXTERNALPORT=3005 \
+	-e PORT=3005 \
+	-e SMPath=10.7.20.89:3001 \
+	--name MEC \
+	nodemec sh
+
+------Test:
+{
+	"DockerImage" : "levanthanh3005/busyboxtest",
+	"serviceName" : "looper"
+}
+
+{
+	"DockerImage" : "levanthanh3005/nodecasting:countdown",
+	"serviceName" : "nodecasting",
+	"ports" : ["5000:5000"],
+	"env" : ["RATIO=0.3","VIDEO_PATH=","MODE=SERVER","INTERNALPORT=5000","BUFFERSIZE=3"],
+	"workdir": "/todo",
+	"args": ["python","main.py"]
+}

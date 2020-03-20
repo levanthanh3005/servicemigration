@@ -17,7 +17,6 @@
             "MODE=SERVER",
             "INTERNALPORT=5000",
             "BUFFERSIZE=3",
-            "RATIO=0.3"
 		],
 		"cwd": "/todo",
 		"capabilities": {
