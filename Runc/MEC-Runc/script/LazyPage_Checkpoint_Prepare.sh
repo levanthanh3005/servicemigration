@@ -1,6 +1,5 @@
 #!/bin/bash
 NAME=$1
-SERVICEPAUSE=$2
 
 cd $HOME/containerroots/$NAME
 

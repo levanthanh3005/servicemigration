@@ -119,6 +119,7 @@ runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages vide
 In server1
 cd /root/containerroots/script
 ./runContainer.sh videoserver
+./LazyPage_Checkpoint_Prepare.sh
 ./lazyPageCheckpoint.sh videoserver 5000/pause
 
 In another tab of host:
