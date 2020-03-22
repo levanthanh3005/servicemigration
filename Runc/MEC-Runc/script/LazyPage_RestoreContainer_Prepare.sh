@@ -12,4 +12,8 @@ cd image
 mkdir rootfs
 
 docker export $(docker create $CONTAINERNAME) | tar -C rootfs -xvf -
-#docker export $(docker create levanthanh3005/nodecasting:countdown) | tar -C rootfs -xvf -
+
+cd $HOME/containerroots/$NAME
+
+tar xzvf /tmp/predump_$NAME.tar.gz -C .
+tar xzvf /tmp/checkpoint_$NAME.tar.gz -C ./image/

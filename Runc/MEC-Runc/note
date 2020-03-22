@@ -120,4 +120,13 @@ In server1
 cd /root/containerroots/script
 ./runContainer.sh videoserver
 ./lazyPageCheckpoint.sh videoserver 5000/pause
+
+In another tab of host:
+cd /home/academic/vanle/containerroots/
+cd videoserver2 && rm -rf * && cd ..
+cp -r videoserver/* videoserver2
+
+In server2:
+cd /root/containerroots/script
+
 ./lazyPageRestore.sh videoserver 172.17.0.3 5000/resume
