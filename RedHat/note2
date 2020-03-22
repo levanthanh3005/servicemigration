@@ -3,8 +3,8 @@ docker run -it --rm \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /lib/modules:/lib/modules:ro \
 	-p 5000:5000 \
-	-v /home/academic/vanle/servicemigration/RedHat:/root/containerroots/script \
-	-v /home/academic/vanle/containerroots/videoserver:/root/containerroots/test:rw \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /home/academic/vanle/containerroots/videoserver:/root/containerroots/videoserver:rw \
 	--name server1 \
 	levanthanh3005/runc:v0.1 bash
 
@@ -13,10 +13,10 @@ docker run -it --rm \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /lib/modules:/lib/modules:ro \
 	-p 5003:5000 \
-	-v /home/academic/vanle/servicemigration/RedHat:/root/containerroots/script \
-	-v /home/academic/vanle/containerroots/videoserver/image:/root/containerroots/test:rw \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /home/academic/vanle/containerroots/videoserver:/root/containerroots/videoserver:rw \
 	--name server2 \
-	runctest bash
+	levanthanh3005/runc:v0.1 bash
 
 Ref:https://github.com/opencontainers/runtime-spec/blob/master/config.md
 
@@ -27,6 +27,8 @@ cd /root/containerroots/script
 ./runContainer.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver videoserverConfig.json
 
 cd /root/containerroots/videoserver/image
+
+runc run -d videoserver &> /dev/null < /dev/null
 
 runc checkpoint --pre-dump --image-path ../predump videoserver
 
@@ -60,3 +62,6 @@ runc checkpoint --tcp-established --leave-running videoserver
 
 runc checkpoint --pre-dump --image-path ../predump videoserver
 runc checkpoint --parent-path ../predump --lazy-pages --tcp-established --leave-running --page-server localhost:27 videoserver
+
+runc restore -d --tcp-established  videoserver
+runc delete videoserver -f

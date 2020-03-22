@@ -11,5 +11,6 @@ runc checkpoint --pre-dump --image-path ../predump $NAME
 echo "done predump"
 
 runc checkpoint --parent-path ../predump $NAME
+#runc checkpoint --pre-dump --image-path ../predump videoserver
 
 echo "done"

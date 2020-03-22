@@ -12,3 +12,4 @@ cd image
 mkdir rootfs
 
 docker export $(docker create $CONTAINERNAME) | tar -C rootfs -xvf -
+#docker export $(docker create levanthanh3005/nodecasting:countdown) | tar -C rootfs -xvf -

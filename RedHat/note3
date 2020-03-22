@@ -18,36 +18,17 @@ docker run -it --rm \
 	--name server2 \
 	levanthanh3005/runc:v0.1 bash
 
-------------------PASS
-cd /root/containerroots/videoserver/image
-runc run -d videoserver &> /dev/null < /dev/null
-runc checkpoint videoserver
-runc restore -d videoserver
-runc delete videoserver -f
-
-After copy to server2:
-chmod -R 777 *
-------------------FAIL
 cd /root/containerroots/videoserver/image
 runc run -d videoserver &> /dev/null < /dev/null
 runc checkpoint --tcp-established videoserver
 runc restore -d --tcp-established  videoserver
 runc delete videoserver -f
-------------------FAIL-TESTING
+------------------
 cd /root/containerroots/videoserver/image
 runc run -d videoserver &> /dev/null < /dev/null
 runc checkpoint --pre-dump --image-path ../predump videoserver
 runc checkpoint --tcp-established videoserver
-
-In another tab of host:
-cd /home/academic/vanle/containerroots/
-cd videoserver2 && rm -rf * && cd ..
-cp -r videoserver videoserver2
-
-In server2
-cd /root/containerroots/videoserver/videoserver && chmod -R 777 *
-cd /root/containerroots/videoserver/videoserver/image
-runc restore -d videoserver
+runc restore -d --tcp-established  videoserver
 runc delete videoserver -f
 ------------------FAIL
 cd /root/containerroots/videoserver/image
@@ -64,15 +45,10 @@ criu lazy-pages --page-server --address 172.17.0.3 --port 27 -vv
 cd /root/containerroots/videoserver/videoserver/image
 runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages --tcp-established videoserver
 ------------------FAIL
-In server1
 cd /root/containerroots/videoserver/image
 runc run -d videoserver &> /dev/null < /dev/null
 runc checkpoint --pre-dump --image-path ../predump videoserver
-runc checkpoint --tcp-established --leave-running videoserver
-runc checkpoint --parent-path ../predump --lazy-pages --tcp-established --leave-running --page-server localhost:27 videoserver
-
-runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver
-
+runc checkpoint --parent-path ../predump --lazy-pages --tcp-established --page-server localhost:27 videoserver
 
 In another tab of host:
 cd /home/academic/vanle/containerroots/
@@ -80,35 +56,10 @@ cd videoserver2 && rm -rf * && cd ..
 cp -r videoserver videoserver2
 
 In server2
-cd /root/containerroots/videoserver/videoserver/image
-docker inspect server1
-criu lazy-pages --page-server --address 172.17.0.3 --port 27 -D checkpoint -vv
+cd /root/containerroots/videoserver/videoserver/image/checkpoint
+criu lazy-pages --page-server --address 172.17.0.3 --port 27 -vv
 
 In another tab of host
 docker exec -it server2 bash
 cd /root/containerroots/videoserver/videoserver/image
-runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
-runc restore -d --tcp-established  videoserver
-------------------PASS
-In server1
-cd /root/containerroots/videoserver/image
-runc run -d videoserver &> /dev/null < /dev/null
-runc checkpoint --pre-dump --image-path ../predump videoserver
-http://10.7.20.89:5000/pause
-runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver
-
-In another tab of host:
-cd /home/academic/vanle/containerroots/
-cd videoserver2 && rm -rf * && cd ..
-cp -r videoserver videoserver2
-
-In server2
-cd /root/containerroots/videoserver/videoserver && chmod -R 777 *
-cd /root/containerroots/videoserver/videoserver/image
-docker inspect server1
-criu lazy-pages --page-server --address 172.17.0.3 --port 27 -D checkpoint -vv
-
-In another tab of host
-docker exec -it server2 bash
-cd /root/containerroots/videoserver/videoserver/image
-runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
+runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages --tcp-established videoserver
