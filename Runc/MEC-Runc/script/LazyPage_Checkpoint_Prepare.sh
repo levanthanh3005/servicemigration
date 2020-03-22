@@ -4,12 +4,12 @@ NAME=$1
 cd $HOME/containerroots/$NAME
 
 runc checkpoint --pre-dump --image-path predump $NAME
-tar -zcvf /tmp/predump_$NAME.tar.gz predump
+tar -zcvf /root/tmp/predump_$NAME.tar.gz predump
 
 cd $HOME/containerroots/$NAME/image
 
 runc checkpoint --leave-running $NAME
-tar -zcvf /tmp/checkpoint_$NAME.tar.gz checkpoint
+tar -zcvf /root/tmp/checkpoint_$NAME.tar.gz checkpoint
 
 echo "Ready to copy"
 

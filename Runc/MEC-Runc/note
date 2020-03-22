@@ -7,7 +7,7 @@ docker run -it --rm \
 	-p 5000:5000 \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
 	-v /home/academic/vanle/containerroots/videoserver:/root/containerroots/videoserver:rw \
-	-v /tmp:/tmp:rw \
+	-v /tmp:/root/tmp:rw \
 	--name server1 \
 	levanthanh3005/runc:v0.1 bash
 
@@ -18,7 +18,7 @@ docker run -it --rm \
 	-p 5003:5000 \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
 	-v /home/academic/vanle/containerroots/videoserver2:/root/containerroots/videoserver:rw \
-	-v /tmp:/tmp:rw \
+	-v /tmp:/root/tmp:rw \
 	--name server2 \
 	levanthanh3005/runc:v0.1 bash
 
