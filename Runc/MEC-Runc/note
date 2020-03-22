@@ -7,7 +7,7 @@ docker run -it --rm \
 	-p 5000:5000 \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
 	-v /home/academic/vanle/containerroots/videoserver:/root/containerroots/videoserver:rw \
-	-v /tmp:/tmp \
+	-v /tmp:/tmp:rw \
 	--name server1 \
 	levanthanh3005/runc:v0.1 bash
 
@@ -18,7 +18,7 @@ docker run -it --rm \
 	-p 5003:5000 \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
 	-v /home/academic/vanle/containerroots/videoserver2:/root/containerroots/videoserver:rw \
-	-v /tmp:/tmp \
+	-v /tmp:/tmp:rw \
 	--name server2 \
 	levanthanh3005/runc:v0.1 bash
 
@@ -132,5 +132,6 @@ cp -r videoserver/* videoserver2
 
 In server2:
 cd /root/containerroots/script
-
+./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done
+./LazyPage_RestoreContainer_Prepare.sh videoserver
 ./lazyPageRestore.sh videoserver 172.17.0.3 5000/resume
