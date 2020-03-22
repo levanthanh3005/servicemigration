@@ -7,6 +7,7 @@ docker run -it --rm \
 	-p 5000:5000 \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
 	-v /home/academic/vanle/containerroots/videoserver:/root/containerroots/videoserver:rw \
+	-v /tmp:/tmp \
 	--name server1 \
 	levanthanh3005/runc:v0.1 bash
 
@@ -17,6 +18,7 @@ docker run -it --rm \
 	-p 5003:5000 \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
 	-v /home/academic/vanle/containerroots/videoserver2:/root/containerroots/videoserver:rw \
+	-v /tmp:/tmp \
 	--name server2 \
 	levanthanh3005/runc:v0.1 bash
 
@@ -119,7 +121,8 @@ runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages vide
 In server1
 cd /root/containerroots/script
 ./runContainer.sh videoserver
-./LazyPage_Checkpoint_Prepare.sh
+./LazyPage_Checkpoint_Prepare.sh videoserver
+-->Copy
 ./lazyPageCheckpoint.sh videoserver 5000/pause
 
 In another tab of host:
