@@ -125,13 +125,9 @@ cd /root/containerroots/script
 -->Copy
 ./lazyPageCheckpoint.sh videoserver 5000/pause
 
-In another tab of host:
-cd /home/academic/vanle/containerroots/
-cd videoserver2 && rm -rf * && cd ..
-cp -r videoserver/* videoserver2
 
 In server2:
 cd /root/containerroots/script
-./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done
+./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done before
 ./LazyPage_RestoreContainer_Prepare.sh videoserver
 ./lazyPageRestore.sh videoserver 172.17.0.3 5000/resume

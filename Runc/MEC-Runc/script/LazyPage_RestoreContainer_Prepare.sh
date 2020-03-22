@@ -1,5 +1,5 @@
 #!/bin/bash
-NAME=$2
+NAME=$1
 
 cd $HOME/containerroots/$NAME
 
