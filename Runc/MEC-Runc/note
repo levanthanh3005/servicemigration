@@ -1,3 +1,5 @@
+docker rm server1 server2 -f
+
 docker run -it --rm \
 	-t --privileged --rm \
 	-v /var/run/docker.sock:/var/run/docker.sock \
@@ -100,7 +102,7 @@ runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27
 In another tab of host:
 cd /home/academic/vanle/containerroots/
 cd videoserver2 && rm -rf * && cd ..
-cp -r videoserver videoserver2
+cp -r videoserver/* videoserver2
 
 In server2
 cd /root/containerroots/videoserver/videoserver && chmod -R 777 *
@@ -112,3 +114,10 @@ In another tab of host
 docker exec -it server2 bash
 cd /root/containerroots/videoserver/videoserver/image
 runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
+
+-----------------WITH SCRIPT
+In server1
+cd /root/containerroots/script
+./runContainer.sh videoserver
+./lazyPageCheckpoint.sh videoserver 5000/pause
+./lazyPageRestore.sh videoserver 172.17.0.3 5000/resume

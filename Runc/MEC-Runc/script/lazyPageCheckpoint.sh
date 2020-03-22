@@ -7,6 +7,7 @@ cd $HOME/containerroots/$NAME/image
 runc checkpoint --pre-dump --image-path ../predump $NAME
 
 curl localhost:$SERVICEPAUSE
+echo "Lets copy"
 runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 $NAME
 
 #./lazyPageCheckpoint.sh videoserver 5000/resume
