@@ -8,7 +8,8 @@ tar -zcvf /root/tmp/predump_$NAME.tar.gz predump
 
 cd $HOME/containerroots/$NAME/image
 
-runc checkpoint --leave-running $NAME
+#runc checkpoint --parent-path ../predump --leave-running $NAME
+timeout 2 runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 $NAME
 tar -zcvf /root/tmp/checkpoint_$NAME.tar.gz checkpoint
 
 echo "Ready to copy"

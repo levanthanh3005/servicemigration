@@ -98,7 +98,7 @@ In server1
 cd /root/containerroots/videoserver/image
 runc run -d videoserver &> /dev/null < /dev/null
 runc checkpoint --pre-dump --image-path ../predump videoserver
-http://10.7.20.89:5000/pause
+curl http://10.7.20.89:5000/pause
 runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver
 
 In another tab of host:
@@ -107,22 +107,49 @@ cd videoserver2 && rm -rf * && cd ..
 cp -r videoserver/* videoserver2
 
 In server2
-cd /root/containerroots/videoserver/videoserver && chmod -R 777 *
-cd /root/containerroots/videoserver/videoserver/image
+cd /root/containerroots/videoserver && chmod -R 777 *
+cd /root/containerroots/videoserver/image
 docker inspect server1
 criu lazy-pages --page-server --address 172.17.0.3 --port 27 -D checkpoint -vv
 
 In another tab of host
 docker exec -it server2 bash
-cd /root/containerroots/videoserver/videoserver/image
+cd /root/containerroots/videoserver/image
 runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
+curl http://10.7.20.89:5003/resume
 
+------------------FAIL
+In server1
+cd /root/containerroots/videoserver/image
+runc run -d videoserver &> /dev/null < /dev/null
+runc checkpoint --pre-dump --image-path ../predump videoserver
+timeout 1 runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver
+curl http://10.7.20.89:5000/pause
+runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver
+
+In another tab of host:
+cd /home/academic/vanle/containerroots/
+cd videoserver2 && rm -rf * && cd ..
+cp -r videoserver/* videoserver2
+
+In server2
+cd /root/containerroots/videoserver && chmod -R 777 *
+cd /root/containerroots/videoserver/image
+docker inspect server1
+criu lazy-pages --page-server --address 172.17.0.3 --port 27 -D checkpoint -vv
+
+In another tab of host
+docker exec -it server2 bash
+cd /root/containerroots/videoserver/image
+runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
+curl http://10.7.20.89:5003/resume
 -----------------WITH SCRIPT
 In server1
 cd /root/containerroots/script
 ./cleanContainer.sh videoserver
 ./runContainer.sh videoserver
 ./LazyPage_Checkpoint_Prepare.sh videoserver
+curl http://10.7.20.89:5000/testconnection
 -->Copy
 ./lazyPageCheckpoint.sh videoserver 5000/pause
 
@@ -130,6 +157,7 @@ cd /root/containerroots/script
 In server2:
 cd /root/containerroots/script
 ./cleanContainer.sh videoserver
-./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done before
+#./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done before
 ./LazyPage_RestoreContainer_Prepare.sh videoserver 172.17.0.3
 ./lazyPageRestore.sh videoserver 5000/resume
+curl http://10.7.20.89:5003/testconnection
