@@ -161,3 +161,236 @@ cd /root/containerroots/script
 ./LazyPage_RestoreContainer_Prepare.sh videoserver 172.17.0.3
 ./lazyPageRestore.sh videoserver 5000/resume
 curl http://10.7.20.89:5003/testconnection
+------------------PASS
+In server1
+cd /root/containerroots/videoserver/image
+runc delete videoserver -f
+runc run -d videoserver &> /dev/null < /dev/null
+runc checkpoint --pre-dump --image-path ../predump videoserver
+sleep 2
+curl http://localhost:5000/testconnection
+curl http://localhost:5000/pause
+runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver
+
+In another tab of host:
+cd /home/academic/vanle/containerroots/
+cd videoserver2 && rm -rf predump && cd image && rm -rf checkpoint
+cd /home/academic/vanle/containerroots/
+cp -r videoserver/predump videoserver2
+cp -r videoserver/image/config.json videoserver2/image
+cp -r videoserver/image/checkpoint videoserver2/image
+
+In server2
+cd /root/containerroots/videoserver/image
+runc delete videoserver -f
+cd /root/containerroots/videoserver && chmod -R 777 *
+cd /root/containerroots/videoserver/image
+#docker inspect server1
+criu lazy-pages --page-server --address 172.17.0.3 --port 27 -D checkpoint -vv </dev/null &>/dev/null &
+sleep 2
+#In another tab of host
+#docker exec -it server2 bash
+#cd /root/containerroots/videoserver/image
+runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
+sleep 2
+curl http://localhost:5000/resume
+curl http://localhost:5000/testconnection
+
+------------------PASS
+In server1
+cd /root/containerroots/videoserver/image
+runc delete videoserver -f
+runc run -d videoserver &> /dev/null < /dev/null
+runc checkpoint --pre-dump --image-path ../predump videoserver
+sleep 2
+cd /root/containerroots/videoserver/
+tar -zcvf /root/tmp/predump_videoserver.tar.gz predump
+sleep 1
+curl http://localhost:5000/testconnection
+cd /root/containerroots/videoserver/image
+#Play movie
+startTime=$(($(date +%s%N)/1000000))
+curl http://localhost:5000/pause
+runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver </dev/null &>/dev/null &
+cd /root/containerroots/videoserver/image
+tar -zcvf /root/tmp/checkpoint_videoserver.tar.gz checkpoint
+endTime=$(($(date +%s%N)/1000000))
+echo "Spent:"
+expr $endTime - $startTime
+echo "End:",$endTime," Start:",$startTime
+
+In server2
+cd /root/containerroots/videoserver && chmod -R 777 *
+rm -rf predump
+tar xzvf /root/tmp/predump_videoserver.tar.gz -C .
+cd /root/containerroots/videoserver/image
+rm -rf checkpoint
+tar xzvf /root/tmp/checkpoint_videoserver.tar.gz -C .
+runc delete videoserver -f
+cd /root/containerroots/videoserver/image
+#docker inspect server1
+criu lazy-pages --page-server --address 172.17.0.3 --port 27 -D checkpoint -vv </dev/null &>/dev/null &
+sleep 5
+#In another tab of host
+#docker exec -it server2 bash
+#cd /root/containerroots/videoserver/image
+runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
+curl http://localhost:5000/resume
+curl http://localhost:5000/testconnection
+
+------------------PASS
+In server1
+cd /root/containerroots/videoserver/image
+runc delete videoserver -f
+runc run -d videoserver &> /dev/null < /dev/null
+runc checkpoint --pre-dump --image-path ../predump videoserver
+sleep 2
+curl http://localhost:5000/testconnection
+curl http://localhost:5000/pause
+runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver </dev/null &>/dev/null &
+sleep 2
+cd /root/containerroots/videoserver/
+tar -zcvf /root/tmp/predump_videoserver.tar.gz predump
+cd /root/containerroots/videoserver/image
+tar -zcvf /root/tmp/checkpoint_videoserver.tar.gz checkpoint
+
+In server2
+cd /root/containerroots/videoserver && chmod -R 777 *
+rm -rf predump
+tar xzvf /root/tmp/predump_videoserver.tar.gz -C .
+cd /root/containerroots/videoserver/image
+rm -rf checkpoint
+tar xzvf /root/tmp/checkpoint_videoserver.tar.gz -C .
+
+cd /root/containerroots/videoserver/image
+runc delete videoserver -f
+cd /root/containerroots/videoserver && chmod -R 777 *
+cd /root/containerroots/videoserver/image
+#docker inspect server1
+criu lazy-pages --page-server --address 172.17.0.3 --port 27 -D checkpoint -vv </dev/null &>/dev/null &
+sleep 2
+#In another tab of host
+#docker exec -it server2 bash
+#cd /root/containerroots/videoserver/image
+runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
+sleep 2
+curl http://localhost:5000/resume
+curl http://localhost:5000/testconnection
+
+------------------PASS
+In server1
+cd /root/containerroots/videoserver/image
+runc delete videoserver -f
+runc run -d videoserver &> /dev/null < /dev/null
+sleep 2
+curl http://localhost:5000/testconnection
+runc checkpoint --pre-dump --image-path ../predump videoserver
+
+startTime=$(($(date +%s%N)/1000000))
+curl http://localhost:5000/pause
+cd /root/containerroots/videoserver/image
+runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 videoserver </dev/null &>/dev/null &
+cd /root/containerroots/videoserver/
+tar -zcvf /root/tmp/predump_videoserver.tar.gz predump
+cd /root/containerroots/videoserver/image
+tar -zcvf /root/tmp/checkpoint_videoserver.tar.gz checkpoint
+
+In server2
+cd /root/containerroots/videoserver && chmod -R 777 *
+rm -rf predump
+tar xzvf /root/tmp/predump_videoserver.tar.gz -C .
+cd /root/containerroots/videoserver/image
+rm -rf checkpoint
+tar xzvf /root/tmp/checkpoint_videoserver.tar.gz -C .
+
+cd /root/containerroots/videoserver/image
+runc delete videoserver -f
+cd /root/containerroots/videoserver && chmod -R 777 *
+cd /root/containerroots/videoserver/image
+#docker inspect server1
+criu lazy-pages --page-server --address 172.17.0.3 --port 27 -D checkpoint -vv </dev/null &>/dev/null &
+sleep 2
+#In another tab of host
+#docker exec -it server2 bash
+#cd /root/containerroots/videoserver/image
+
+runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
+
+curl http://localhost:5000/resume
+curl http://localhost:5000/testconnection
+
+
+------------------PASS
+In server1
+cd /root/containerroots/videoserver && chmod -R 777 *
+rm -rf predump
+cd /root/containerroots/videoserver/image
+rm -rf checkpoint
+cd /root/containerroots/videoserver/image
+runc delete videoserver -f
+runc run -d videoserver &> /dev/null < /dev/null
+runc checkpoint --pre-dump --image-path ../predump videoserver
+cd /root/containerroots/videoserver/
+tar -zcvf /root/tmp/predump_videoserver.tar.gz predump
+curl http://localhost:5000/testconnection
+
+echo '0' > /root/tmp/lazy-pipe
+
+#Play movie
+startTime=$(($(date +%s%N)/1000000))
+curl http://localhost:5000/pause
+cd /root/containerroots/videoserver/image
+runc checkpoint --parent-path ../predump --lazy-pages --status-fd /root/tmp/lazy-pipe --page-server localhost:27 videoserver </dev/null &>/dev/null &
+#while [ ! -f "checkpoint/inventory.img" ]; do echo "wait until inventory exitst"; done
+while [ $(cat /root/tmp/lazy-pipe) -eq "0" ]; do echo "wait lazy page ready"; done
+#sleep 2
+cd /root/containerroots/videoserver/image
+tar -zcvf /root/tmp/checkpoint_videoserver.tar.gz checkpoint
+endTime=$(($(date +%s%N)/1000000))
+echo "Spent:"
+expr $endTime - $startTime
+echo "End:",$endTime," Start:",$startTime
+
+In server2
+cd /root/containerroots/videoserver && chmod -R 777 *
+runc delete videoserver -f
+rm -rf predump
+tar xzvf /root/tmp/predump_videoserver.tar.gz -C .
+cd /root/containerroots/videoserver/image
+rm -rf checkpoint
+
+startTime=$(($(date +%s%N)/1000000))
+tar xzvf /root/tmp/checkpoint_videoserver.tar.gz -C .
+cd /root/containerroots/videoserver/image
+#docker inspect server1
+criu lazy-pages --page-server --address 172.17.0.3 --port 27 -D checkpoint -vv </dev/null &>/dev/null &
+#In another tab of host
+#docker exec -it server2 bash
+#cd /root/containerroots/videoserver/image
+runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
+curl http://localhost:5000/resume
+endTime=$(($(date +%s%N)/1000000))
+echo "Spent:"
+expr $endTime - $startTime
+echo "End:",$endTime," Start:",$startTime
+curl http://localhost:5000/testconnection
+-------------------SCRIPT
+cd /root/containerroots/script
+./cleanContainer.sh videoserver
+#./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done before
+./runContainer.sh videoserver
+./predumpCheckPoint.sh
+#Copy predump
+#play video
+curl http://10.7.20.89:5000/testconnection
+./lazyPageCheckpoint.sh videoserver 5000/pause
+#Copy checkpoint
+
+
+In server2:
+cd /root/containerroots/script
+./cleanContainer.sh videoserver
+#./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done before
+./LazyPage_RestoreContainer_Prepare.sh videoserver
+./lazyPageRestore.sh videoserver 5000/resume 172.17.0.3
+curl http://10.7.20.89:5003/testconnection

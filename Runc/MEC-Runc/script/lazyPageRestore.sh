@@ -1,15 +1,20 @@
 #!/bin/bash
 NAME=$1
 SERVICERESUME=$2
+SOURCEADDRESS=$3
+
+########
+startTime=$(($(date +%s%N)/1000000))
 
 cd $HOME/containerroots/$NAME/image
 
-sleep 2
-#criu lazy-pages --page-server --address 172.17.0.3 --port 27 -D checkpoint -vv </dev/null &>/dev/null &
-runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages $NAME
-#runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
-#runc restore --work-path checkpoint --image-path checkpoint --lazy-pages videoserver
-curl localhost:$SERVICERESUME
-#curl localhost:5000/resume
+tar xzvf /root/tmp/checkpoint_$NAME.tar.gz -C .
 
-#./lazyPageRestore.sh videoserver 172.17.0.3 5000/resume
+criu lazy-pages --page-server --address $SOURCEADDRESS --port 27 -D checkpoint -vv </dev/null &>/dev/null &
+
+runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages $NAME
+curl localhost:$SERVICERESUME
+endTime=$(($(date +%s%N)/1000000))
+echo "Spent:"
+expr $endTime - $startTime
+echo "End:",$endTime," Start:",$startTime
