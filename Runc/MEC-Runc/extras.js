@@ -96,7 +96,11 @@ module.exports = {
 			if (s == 0 || data[s][0] == '') continue;
 			rs[s-1] = {
 				id : data[s][0],
-				image : data[s][2]
+				pid : data[s][1],
+				status: data[s][2],
+				bundle : data[s][3],
+				created: data[s][4],
+				owner: data[s][5]
 			}
 			//console.log(rs[s-1]);
 		}

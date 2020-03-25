@@ -2,15 +2,15 @@
 NAME=$1
 SERVICEPAUSE=$2
 
-cd $HOME/containerroots/$NAME/image
+# cd $HOME/containerroots/$NAME/image
 
-runc checkpoint --pre-dump --image-path ../predump $NAME
+# runc checkpoint --pre-dump --image-path ../predump $NAME
 
-curl localhost:$SERVICEPAUSE
-echo "Lets copy"
-runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 $NAME
+# curl localhost:$SERVICEPAUSE
+# echo "Lets copy"
+# runc checkpoint --parent-path ../predump --lazy-pages --page-server localhost:27 $NAME
 
-########
+# ########
 
 startTime=$(($(date +%s%N)/1000000))
 curl localhost:$SERVICEPAUSE

@@ -379,7 +379,7 @@ cd /root/containerroots/script
 ./cleanContainer.sh videoserver
 #./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done before
 ./runContainer.sh videoserver
-./predumpCheckPoint.sh
+./predumpCheckPoint.sh videoserver
 #Copy predump
 #play video
 curl http://10.7.20.89:5000/testconnection
@@ -391,6 +391,6 @@ In server2:
 cd /root/containerroots/script
 ./cleanContainer.sh videoserver
 #./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done before
-./LazyPage_RestoreContainer_Prepare.sh videoserver
+./unzip_predump.sh videoserver
 ./lazyPageRestore.sh videoserver 5000/resume 172.17.0.3
 curl http://10.7.20.89:5003/testconnection

@@ -2,6 +2,8 @@
 CONTAINERNAME=$1
 NAME=$2
 
+./cleanContainer.sh $NAME
+
 cd $HOME/containerroots
 mkdir $NAME
 cd $NAME
