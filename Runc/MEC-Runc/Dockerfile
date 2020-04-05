@@ -1,4 +1,5 @@
 From levanthanh3005/runc:v0.1
+#https://github.com/levanthanh3005/servicemigration/blob/master/ImageTest/DockerNode/runc.docker
 
 ENV NODE_VERSION 8.9.0
 
@@ -19,11 +20,7 @@ ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 RUN node -v
 
-RUN mkdir $HOME/containerroots
+#ADD . node
+RUN npm install -g express body-parser request ejs
 
-ADD . /todo
-WORKDIR /todo
-
-RUN npm install express body-parser request
-
-CMD node server.js
+#CMD node server.js

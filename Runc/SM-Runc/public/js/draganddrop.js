@@ -1,4 +1,5 @@
 var stopLoadingData = false;
+var movingType = "predump";//lazypage
 
 function allowDrop(ev) {
   console.log("allowDrop");
@@ -43,12 +44,13 @@ function drop(ev) {
 
   var serviceIndex = data.split("_")[2];
   console.log()
-  console.log("Move "+data+" from MEC_"+ originalMECIndex+ " to MEC_"+newMECIndex);
+  console.log("Move "+data+" from MEC_"+ originalMECIndex+ " to MEC_"+newMECIndex+" movingType:"+movingType);
 
   $.post('/migration', {
           serviceIndex: serviceIndex,
           originalMECIndex : originalMECIndex,
-          newMECIndex
+          newMECIndex : newMECIndex,
+          movingType : movingType
       }
   )
   .then(

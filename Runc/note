@@ -1,20 +1,7 @@
 ----Service mananger
 docker run -it --rm \
-	-v /Users/vanthanhle/Desktop/Tools/ServiceMigration:/todo \
-	-v /var/run/docker.sock:/var/run/docker.sock \
-	-v /tmp:/tmp \
-	-w /todo/Runc/SM-Runc \
-	-p 3001:3001 \
-	-e EXTERNALPORT=3001 \
-	-e PORT=3001 \
-	-e GOBETWEEN=10.7.20.89:6003 \
-	--name SM \
-	levanthanh3005/dockernode:v0.1 sh
-
-docker run -it --rm \
-	-v /home/academic/vanle/servicemigration/:/todo \
-	-v /var/run/docker.sock:/var/run/docker.sock \
-	-w /todo/Runc/SM-Runc \
+	-v /home/academic/vanle/servicemigration/Runc/SM-Runc:/todo \
+	-w /todo \
 	-p 3001:3001 \
 	-e EXTERNALPORT=3001 \
 	-e PORT=3001 \
@@ -22,101 +9,73 @@ docker run -it --rm \
 	--name SM \
 	-e PROXYPORT=7000 \
 	-e MYREALIP=10.7.20.89 \
-	levanthanh3005/dockernode:v0.1 sh
+	mecrunc bash
 
-docker run -it --rm \
-	-p 3001:3001 \
-	-e EXTERNALPORT=3001 \
-	-e PORT=3001 \
-	-e GOBETWEEN=10.7.20.89:6003 \
-	-e PROXYPORT=7000 \
-	-e MYIP=10.7.20.89 \
-	--name SM \
-	levanthanh3005/servicemanager:v0.1
-
-
-PORT=3001  node server.js
+node server.js
 
 ----MEC
-docker run -it --rm \
-	-v /home/academic/vanle/servicemigration:/todo \
-	-v /var/run/docker.sock:/var/run/docker.sock \
-	-v /var/lib/docker/containers:/dockercontainer \
-	-v /tmp:/tmp \
-	-w /todo/MEC \
-	-p 3005:3005 \
-	-e ORG=Unibz \
-	-e EXTERNALPORT=3005 \
-	-e PORT=3005 \
-	-e SMPath=10.7.20.89:3001 \
-	--name MEC \
-	levanthanh3005/dockernode:v0.1 sh 
 
 docker run -it --rm \
+	--privileged \
 	-v /var/run/docker.sock:/var/run/docker.sock \
-	-v /var/lib/docker/containers:/dockercontainer \
-	-v /tmp:/tmp \
-	-p 3005:3005 \
+	-v /lib/modules:/lib/modules:ro \
+	--net host \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc:/todo \
+	-w /todo \
+	-v /tmp:/root/tmp:rw \
 	-e ORG=Unibz \
 	-e EXTERNALPORT=3005 \
 	-e PORT=3005 \
 	-e SMPath=10.7.20.89:3001 \
-	--name MEC \
-	levanthanh3005/mec:v0.1
+	--name MEC1 \
+	mecrunc bash
 
 docker run -it --rm \
-	-v /home/academic/vanle/servicemigration:/todo \
+	--privileged \
 	-v /var/run/docker.sock:/var/run/docker.sock \
-	-v /var/lib/docker/containers:/dockercontainer \
-	-v /tmp:/tmp \
-	-w /todo/MEC \
-	-p 3005:3005 \
+	-v /lib/modules:/lib/modules:ro \
+	--net host \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc:/todo \
+	-w /todo \
+	-v /tmp:/root/tmp:rw \
 	-e ORG=Unibz \
-	-e EXTERNALPORT=3005 \
-	-e PORT=3005 \
+	-e EXTERNALPORT=3006 \
+	-e PORT=3006 \
 	-e SMPath=10.7.20.89:3001 \
-	--name MEC \
-	nodemec sh
+	--name MEC2 \
+	mecrunc bash
 
 ------Test:
 {
-	"DockerImage" : "levanthanh3005/busyboxtest",
-	"serviceName" : "looper"
-}
-
-{
-	"DockerImage" : "levanthanh3005/nodecasting:countdown",
-	"serviceName" : "nodecasting",
-	"ports" : ["5000:5000"],
-	"env" : ["PAUSE=5000/pause","EXTERNALPORT=5000"]
-}
-
-{
-	"DockerImage" : "levanthanh3005/notificationreceiver:v0.1",
-	"serviceName" : "notificationreceiver",
-	"ports" : ["3003:3003"],
-	"env" : ["PORT=3003"]
+  "DockerImage" : "levanthanh3005/nodecasting:v0.2.countdown.server",
+  "serviceName" : "nodecasting",
+  "ports" : [5000],
+  "env" : ["RATIO=0.3","VIDEO_PATH=","MODE=SERVER","INTERNALPORT=5000","BUFFERSIZE=3"],
+  "workdir": "/todo",
+  "args": ["python","main.py"],
+  "migration": {
+     "pause": "5000/pause",
+     "resume": "5000/resume",
+     "checkpoint": true,
+     "lazypage": "172.17.0.3",
+     "predump": true
+   }
 }
 {
-	"DockerImage" : "levanthanh3005/notificationpush:v0.1",
-	"serviceName" : "notificationpush",
-	"env" : ["PUSHPATH=http://10.7.20.89:3003/notification"]
+  "DockerImage" : "levanthanh3005/nodecasting:v0.2.countdown.server",
+  "serviceName" : "nodecasting",
+  "ports" : [5000],
+  "env" : ["RATIO=0.3","VIDEO_PATH=","MODE=SERVER","INTERNALPORT=5000","BUFFERSIZE=3"],
+  "workdir": "/todo",
+  "args": ["python","main.py"],
+  "migration": {
+     "pause": "5000/pause",
+     "resume": "5000/resume"
+   }
 }
 --------Startup:
 docker run -d -p 3000:3000 -v "$(pwd):/home/project:cached" theiaide/theia:next theia browsertheia desktop 
 
----------Go between
+---------
+curl http://10.7.20.89:5000/testconnection
 
-docker run -d -p 7000-7100:7000-7100 -p 6002:80 -p 6003:8888 -v /home/academic/vanle/servicemigration/gobetween:/etc/gobetween/conf/:rw --name gobetween yyyar/gobetween
-
-curl 10.7.20.89:6003
-
-
-Todo:
-- Test the code of server works or not
-- make ssh without password in macos
-- make criu run on macos: 
-https://github.com/boucher/criu-for-mac/blob/master/Dockerfile
-- make a proxy like haproxy to configure the request from user, so when the user change node, the request change as well, use one server for all request, extend the code of dockercloud/haproxy
-- make service manager to control request come and out
-- simulate the roaming by make the response delay

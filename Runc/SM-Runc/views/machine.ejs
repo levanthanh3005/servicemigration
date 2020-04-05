@@ -99,9 +99,18 @@
 
         var controller = '<div>'+
         '  <div class="stopService service_'+MECIndex+'_'+serviceIndex+'">Stop</div>'+
+        '  <select id="movingType">'+
+        '     <option value="predump">Predump</option>'+
+        '     <option value="lazypage">Lazy Page</option>'+
+        '  </select>'+
         '</div>';
 
         $("#MECcontroller").html(controller);
+
+        $("#movingType").change(function(){
+          console.log($(this).children("option:selected"). val());
+          movingType="";
+        })
 
         $(".stopService").click(function(){
           var MECIndex = $(this).attr("class").split("_")[1];

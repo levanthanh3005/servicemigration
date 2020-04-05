@@ -18,7 +18,7 @@ var org = process.env.ORG;
 
 // var gobetween = process.env.GOBETWEEN;
 
-// var myIp = "";
+var myIp = "";
 
 const app = express()
 app.use(bodyParser.json());
@@ -27,10 +27,10 @@ var MECIp = "find that";
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
+var lsService = {};
 
 app.post('/start', function (req, res) {
   
-lsService = {};
 // data = {
 //   "DockerImage" : "levanthanh3005/nodecasting:countdown",
 //   "serviceName" : "nodecasting",
@@ -50,7 +50,7 @@ lsService = {};
   console.log("Start service");
   console.log(req.body);
   console.log(req.body.migration.checkpoint);
-  serviceName = req.body.migration.serviceName;
+  serviceName = req.body.serviceName;
 
   if (!serviceName) {
       res.send({
@@ -61,51 +61,61 @@ lsService = {};
 
   if (req.body.migration.checkpoint && !req.body.migration.lazypage) {
 
-    var cmd = "cd $HOME/containerroots/"+serviceName+"/image && runc restore -d "+serviceName
+    var cmd = "cd /root/containerroots/"+serviceName+"/image && runc restore -d "+serviceName
+    console.log("checkpoint & !lazypage");
     extras.execute(cmd, function(stdout, error) {
-      testConnection(req.body.ports[0],function(){
-        console.log("Service started:"+serviceName);
-        res.send({
-          status : 1,
-          serviceName : serviceName,
-          description : "service started"
-        });
+    //   testConnection(req.body.ports[0],function(){
+    //     console.log("Service started:"+serviceName);
+    //     res.send({
+    //       status : 1,
+    //       serviceName : serviceName,
+    //       description : "service started"
+    //     });
 
-      })
+    //   })
     })
 
   } else if (req.body.migration.checkpoint && req.body.migration.lazypage && req.body.migration.predump) {
-    var cmd = "/script/lazyPageRestore.sh "+serviceName+" "+req.body.migration.resume+" "+req.body.migration.lazypage;
+    var cmd = "./script/lazyPageRestore.sh "+serviceName+" "+req.body.migration.resume+" "+req.body.migration.lazypage;
     // ./lazyPageRestore.sh videoserver 5000/resume 172.17.0.3
+    console.log("checkpoint & lazypage & predump");
+
     extras.execute(cmd, function(stdout, error) {
-      testConnection(req.body.ports[0],function(){
-        console.log("Service retored:"+serviceName);
-        res.send({
-          status : 1,
-          serviceName : serviceName,
-          description : "service retored"
-        });
-      })
+    //   testConnection(req.body.ports[0],function(){
+    //     console.log("Service retored:"+serviceName);
+    //     res.send({
+    //       status : 1,
+    //       serviceName : serviceName,
+    //       description : "service retored"
+    //     });
+    //   })
     })
   } else {
 
     serviceName = serviceName ? serviceName : "Sv"+new Date().getTime();
+    console.log("others");
 
-    var cmd = "/script/runContainer_Prepare.sh "+req.body.DockerImage+" "+serviceName;
-    extras.execute(cmd, function(stdout, error) {
-      extras.convertToJson("$HOME/containerroots/"+serviceName+"/image",req.body,function(){  
-        cmd = "/script/runContainer.sh "+serviceName;
+    // var cmd = "./script/runContainer_Prepare.sh "+req.body.DockerImage+" "+serviceName+" > /dev/null 2>&1";
+    var cmd = "./script/runContainer_Prepare.sh "+req.body.DockerImage+" "+serviceName+" ";
 
+    extras.execute(cmd, function() {
+      console.log("Prepare done");
+      extras.convertToJson("/root/containerroots/"+serviceName+"/image",req.body,function(){  
+
+        cmd = "./script/runContainer.sh "+serviceName;
+        console.log("Start to run container");
         extras.execute(cmd, function(stdout, error) {
-          testConnection(req.body.ports[0],function(){
-            console.log("Service started:"+serviceName);
-            res.send({
-              status : 1,
-              serviceName : serviceName,
-              description : "service started"
-            });
 
-          })
+        //   testConnection(req.body.ports[0],function(){
+        //     console.log("Service started:"+serviceName);
+        lsService[serviceName] = req.body;
+        datasend = lsService[serviceName];
+        datasend.status = 1;
+        datasend.description = "service started";
+
+        res.send(datasend);
+
+        //   })
         })
       })
 
@@ -155,8 +165,8 @@ app.post('/stop', function (req, res) {
   })
 })
 
-function postCommitFile(checkpoint, callback){
-  var filename = "/tmp/"+checkpoint+".tar.gz";
+function postCommitFile(fileName, pathPost, callback){
+  var filename = "/root/tmp/"+fileName+".tar.gz";
 
   var rs = fs.createReadStream(filename);
   var ws = request.post(pathPost+"/"+checkpoint);
@@ -210,33 +220,88 @@ function askNeighbourToUnzipPredump(migrationControlPath, serviceName, filename,
 }
 
 app.post('/migrationcontrol', function (req, res) {
-  if (req.body.cmd == "SERVICEPREPARING") {
-    var cmd = "/script/runContainer_Prepare.sh "+req.body.config.DockerImage+" "+req.body.config.serviceName;
+  var movingType = req.body.movingType;
+  if (movingType == "predump") {
+    var cmd = "./script/runContainer_Prepare.sh "+req.body.config.DockerImage+" "+req.body.config.serviceName;
     extras.execute(cmd, function(stdout, error) {
       console.log("Done preparing service:"+req.body.config.serviceName)
+      var cmd = "./script/unzip_predump.sh "+req.body.config.serviceName+" "+req.body.filename;
+      extras.execute(cmd, function(stdout, error) {
+        console.log("Done unzip predump:"+req.body.config.serviceName+" "+req.body.filename);
+      });
     });
-  } else if (req.body.cmd == "UNZIPPREDUMP") {
-    var cmd = "/script/unzip_predump.sh "+req.body.config.serviceName+" "+req.body.filename;
-    extras.execute(cmd, function(stdout, error) {
-      console.log("Done unzip predump:"+req.body.config.serviceName+" "+req.body.filename);
-    });
-  } else if (req.body.cmd == "LAZYPAGERETORE") {
-    var cmd = "/script/lazyPageRestore.sh "+req.body.config.serviceName+" "+req.body.+" "+req.body.config.migration.resume+" "+req.body.newIp;
+  } else if (movingType == "lazypage") {
+    var cmd = "./script/lazyPageRestore.sh "+req.body.config.serviceName+" "+req.body.filename+" "+req.body.config.migration.resume+" "+req.body.newIp;
     // ./lazyPageRestore.sh videoserver 5000/resume 172.17.0.3
     extras.execute(cmd, function(stdout, error) {
       console.log("Done restore "+req.body.config.serviceName);
-    });
+    });    
   }
+  // if (req.body.cmd == "SERVICEPREPARING") {
+  //   var cmd = "./script/runContainer_Prepare.sh "+req.body.config.DockerImage+" "+req.body.config.serviceName;
+  //   extras.execute(cmd, function(stdout, error) {
+  //     console.log("Done preparing service:"+req.body.config.serviceName)
+  //   });
+  // } else if (req.body.cmd == "UNZIPPREDUMP") {
+  //   var cmd = "./script/unzip_predump.sh "+req.body.config.serviceName+" "+req.body.filename;
+  //   extras.execute(cmd, function(stdout, error) {
+  //     console.log("Done unzip predump:"+req.body.config.serviceName+" "+req.body.filename);
+  //   });
+  // } else if (req.body.cmd == "LAZYPAGERETORE") {
+  //   var cmd = "./script/lazyPageRestore.sh "+req.body.config.serviceName+" "+req.body.filename+" "+req.body.config.migration.resume+" "+req.body.newIp;
+  //   // ./lazyPageRestore.sh videoserver 5000/resume 172.17.0.3
+  //   extras.execute(cmd, function(stdout, error) {
+  //     console.log("Done restore "+req.body.config.serviceName);
+  //   });
+  // }
 })
 
-app.post('/predump', function (req, res) {
+// app.post('/predump', function (req, res) {
+  
+//   /*
+//     Post {
+//       serviceName : <serviceName>,
+//       newIP : <newIP>,
+//       pathPost : <pathPost the zip file>,
+//       migrationControlPath : <path>
+//     }
+//   */
+
+//   console.log(req.body);
+//   var serviceName = req.body.serviceName;
+//   var newIP = req.body.newIP;
+//   var pathPost = req.body.pathPost;
+
+//   var predump = "predump_" + new Date().getTime();
+
+//   cmd = "./script/predumpCheckPoint.sh "+serviceName;
+// //     cmd = "docker checkpoint create --leave-running --checkpoint-dir /tmp "+serviceName+" "+checkpoint;
+//   extras.execute(cmd, function(stdout,error) {
+//     console.log("predump for "+serviceName); 
+
+//     if (error !== null) {
+//       res.send({
+//         status : 0,
+//         description : error
+//       });  
+//       return;
+//     }
+//     postCommitFile(predump,function(result){
+//       res.send(result);
+//     });
+
+//   })
+// })
+
+app.post('/migration', function (req, res) {
   
   /*
     Post {
       serviceName : <serviceName>,
-      newIP : <newIP>,
       pathPost : <pathPost the zip file>,
+      newIP : <newIP>,
       migrationControlPath : <path>
+      movingType : movingType
     }
   */
 
@@ -244,73 +309,45 @@ app.post('/predump', function (req, res) {
   var serviceName = req.body.serviceName;
   var newIP = req.body.newIP;
   var pathPost = req.body.pathPost;
-
-  var predump = "predump_" + new Date().getTime();
-
-  cmd = "/script/predumpCheckPoint.sh "+serviceName;
-//     cmd = "docker checkpoint create --leave-running --checkpoint-dir /tmp "+serviceName+" "+checkpoint;
-  extras.execute(cmd, function(stdout,error) {
-    console.log("predump for "+serviceName); 
-
-    if (error !== null) {
-      res.send({
-        status : 0,
-        description : error
-      });  
-      return;
-    }
-    postCommitFile(predump,function(result){
-      res.send(result);
-    });
-
-  })
-})
-
-app.post('/lazymigration', function (req, res) {
-  
-  /*
-    Post {
-      serviceName : <serviceName>,
-      newIP : <newIP>,
-      pathPost : <pathPost the zip file>,
-      migrationControlPath : <path>
-    }
-  */
-
-  console.log(req.body);
-  var serviceName = req.body.serviceName;
-  var newIP = req.body.newIP;
-  var pathPost = req.body.pathPost;
-
-  var checkpoint = "cp" + new Date().getTime();
+  var migrationControlPath = req.body.migrationControlPath;
+  var movingType = req.body.movingType;
+  var fileName = "";
 
 
   var makeCheckpoint = function(callback) {
-    cmd = "docker checkpoint create --checkpoint-dir /tmp "+serviceName+" "+checkpoint;
+    if (movingType == "predump") {
+      cmd = "./predumpCheckPoint.sh "+serviceName;
+      console.log("checkpoint predump_"+serviceName+".tar.gz"); 
+      fileName = "predump_"+serviceName;
+      // predump_$NAME.tar.gz
+    } else if (movingType == "lazypage") {
+      cmd = "./lazyPageCheckpoint.sh "+serviceName+" "+lsService[serviceName].migration.pause;
+      console.log("checkpoint lazypage checkpoint_"+serviceName+".tar.gz"); 
+      fileName = "checkpoint_"+serviceName;
+    }
 //     cmd = "docker checkpoint create --leave-running --checkpoint-dir /tmp "+serviceName+" "+checkpoint;
     extras.execute(cmd, function(stdout,error) {
-      console.log("checkpoint "+checkpoint); 
-
       if (error !== null) {
         res.send({
           status : 0,
-          description : error
+          description : error,
+          movingType : movingType
         });  
         return;
       }
 
-      callback(checkpoint);
+      callback(fileName);
 
     })
   }
 
-  makeCheckpoint(function(checkpoint){
-    postCommitFile(checkpoint,function(){
-      request.post(req.body.migrationControlPath, {
+  makeCheckpoint(function(fileName){
+    postCommitFile(fileName,pathPost,function(){
+      request.post(migrationControlPath, {
         json: {
-          cmd : "LAZYPAGERETORE",
+          movingType : movingType,
           config : lsService[serviceName],
-          filename : checkpoint,
+          filename : fileName,
           newIP: req.body.newIP
         }
       }, (error, respost, body) => {
@@ -326,7 +363,7 @@ app.post('/lazymigration', function (req, res) {
 app.post('/uploadcheckpoint/:checkpoint', function (req, res) {
   var checkpoint = path.basename(req.params.checkpoint);
   //Ref: https://gist.github.com/alepez/9205394
-  filename = path.resolve(__dirname, "/tmp/"+checkpoint+".tar.gz");
+  filename = path.resolve(__dirname, "/root/tmp/"+checkpoint+".tar.gz");
 
   var dst = fs.createWriteStream(filename);
   req.pipe(dst);
@@ -355,6 +392,13 @@ function getRunningContainers(callback){
     data = extras.splitString(stdout);
     var containers = extras.parseContainers(data.fullData);
     // console.log(runningContainers);
+    for (c in containers) {
+      if (lsService[containers[c].serviceName]) {
+        var state = containers[c];
+        containers[c] = lsService[containers[c].serviceName];
+        containers[c].state = state;
+      }
+    }
     callback(containers)
   }, false, true);
 
@@ -389,9 +433,9 @@ function registerToServiceManager(){
         throw new Error("Fail to register MEC");
         return;
       }
-
+      console.log(body)
       // gobetween = body.gobetween;
-      // myIp = body.ip;
+      myIp = body.ip;
 
       console.log("Register information");
     })
@@ -401,3 +445,44 @@ http.createServer(app).listen(port, function () {
   console.log('MEC app listening on port' + port);
   registerToServiceManager();
 });
+
+// req = {body:{}}
+// req.body = {
+//   "DockerImage" : "levanthanh3005/nodecasting:countdown",
+//   "serviceName" : "nodecasting",
+//   "ports" : [5000],
+//   "env" : ["RATIO=0.3","VIDEO_PATH=","MODE=SERVER","INTERNALPORT=5000","BUFFERSIZE=3"],
+//   "workdir": "/todo",
+//   "args": ["python","main.py"],
+//   "migration": {
+//      "pause": "5000/pause",
+//      "resume": "5000/resume"
+//    }
+// }
+// serviceName = "nodecasting";
+// console.log("others");
+
+// // var cmd = "./script/runContainer_Prepare.sh "+req.body.DockerImage+" "+serviceName+" > /dev/null 2>&1";
+// var cmd = "./script/runContainer_Prepare.sh "+req.body.DockerImage+" "+serviceName+" ";
+
+// extras.execute(cmd, function() {
+//     console.log("Prepare done");
+//     extras.convertToJson("/root/containerroots/"+serviceName+"/image",req.body,function(){  
+
+//     cmd = "./script/runContainer.sh "+serviceName;
+//     console.log("Start to run container");
+//     extras.execute(cmd, function(stdout, error) {
+//         console.log("Done");
+//     //   testConnection(req.body.ports[0],function(){
+//     //     console.log("Service started:"+serviceName);
+//     //     res.send({
+//     //       status : 1,
+//     //       serviceName : serviceName,
+//     //       description : "service started"
+//     //     });
+
+//     //   })
+//     })
+//     })
+
+// });

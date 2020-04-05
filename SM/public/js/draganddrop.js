@@ -61,7 +61,8 @@ function drop(ev) {
       function fail(data, status) {
         console.log("fail");
         stopLoadingData = false;
-
+        console.log(data);
+        console.log(status);
       }
   );
 

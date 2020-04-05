@@ -19,7 +19,7 @@ module.exports = {
 			   function (error, stdout, stderr) {
 			   		if (!detach) {
 						console.log('stdout: ' + stdout);
-						console.log('stderr: ' + stderr);
+                        console.log('stderr: ' + stderr);
 					}
 					if (error !== null) {
 						console.log('exec error: ' + error);
@@ -95,6 +95,7 @@ module.exports = {
 		for (var s in data) {
 			if (s == 0 || data[s][0] == '') continue;
 			rs[s-1] = {
+				serviceName : data[s][0],
 				id : data[s][0],
 				pid : data[s][1],
 				status: data[s][2],

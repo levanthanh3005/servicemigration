@@ -2,16 +2,14 @@
 CONTAINERNAME=$1
 NAME=$2
 
-./cleanContainer.sh $NAME
-
 cd $HOME/containerroots
-mkdir $NAME
+[ ! -d $NAME ] && mkdir $NAME
 cd $NAME
 
-mkdir image
-mkdir predump
+[ ! -d image ] && mkdir image
+[ ! -d predump ] && mkdir predump
 cd image
-mkdir rootfs
+[ ! -d rootfs ] && mkdir rootfs
 
-docker export $(docker create $CONTAINERNAME) | tar -C rootfs -xvf -
+docker export $(docker create $CONTAINERNAME) | tar -C rootfs -xvf - > /dev/null 2>&1
 #docker export $(docker create levanthanh3005/nodecasting:countdown) | tar -C rootfs -xvf -
