@@ -1,6 +1,6 @@
 #!/bin/bash
 NAME=$1
-FILENAME=$1
+FILENAME=$2
 
 cd $HOME/containerroots/$NAME/
 chmod -R 777 *

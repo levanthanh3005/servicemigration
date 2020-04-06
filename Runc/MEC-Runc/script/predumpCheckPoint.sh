@@ -5,6 +5,6 @@ cd $HOME/containerroots/$NAME/image
 
 echo "start predump"
 runc checkpoint --pre-dump --image-path ../predump $NAME
-cd /root/containerroots/videoserver/
-tar -zcvf /root/tmp/predump_$NAME.tar.gz predump
+cd $HOME/containerroots/$NAME
+tar -zcvf /root/tmp/predump_$NAME.tar.gz predump && echo "ZIP done"
 echo '0' > /root/tmp/lazy-pipe

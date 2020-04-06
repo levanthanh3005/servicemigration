@@ -13,3 +13,5 @@ cd image
 
 docker export $(docker create $CONTAINERNAME) | tar -C rootfs -xvf - > /dev/null 2>&1
 #docker export $(docker create levanthanh3005/nodecasting:countdown) | tar -C rootfs -xvf -
+
+#[ ! -d $HOME/tmp/ ] && mkdir $HOME/tmp/

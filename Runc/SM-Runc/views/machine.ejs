@@ -109,7 +109,7 @@
 
         $("#movingType").change(function(){
           console.log($(this).children("option:selected"). val());
-          movingType="";
+          movingType=$(this).children("option:selected"). val();
         })
 
         $(".stopService").click(function(){

@@ -22,7 +22,6 @@ docker run -it --rm \
 	--net host \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc:/todo \
 	-w /todo \
-	-v /tmp:/root/tmp:rw \
 	-e ORG=Unibz \
 	-e EXTERNALPORT=3005 \
 	-e PORT=3005 \
@@ -37,7 +36,6 @@ docker run -it --rm \
 	--net host \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc:/todo \
 	-w /todo \
-	-v /tmp:/root/tmp:rw \
 	-e ORG=Unibz \
 	-e EXTERNALPORT=3006 \
 	-e PORT=3006 \
@@ -46,21 +44,7 @@ docker run -it --rm \
 	mecrunc bash
 
 ------Test:
-{
-  "DockerImage" : "levanthanh3005/nodecasting:v0.2.countdown.server",
-  "serviceName" : "nodecasting",
-  "ports" : [5000],
-  "env" : ["RATIO=0.3","VIDEO_PATH=","MODE=SERVER","INTERNALPORT=5000","BUFFERSIZE=3"],
-  "workdir": "/todo",
-  "args": ["python","main.py"],
-  "migration": {
-     "pause": "5000/pause",
-     "resume": "5000/resume",
-     "checkpoint": true,
-     "lazypage": "172.17.0.3",
-     "predump": true
-   }
-}
+
 {
   "DockerImage" : "levanthanh3005/nodecasting:v0.2.countdown.server",
   "serviceName" : "nodecasting",

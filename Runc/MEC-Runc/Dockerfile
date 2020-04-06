@@ -22,5 +22,10 @@ RUN node -v
 
 #ADD . node
 RUN npm install -g express body-parser request ejs
-
+RUN mkdir /root/tmp
+#RUN mkdir /root/containerroots
 #CMD node server.js
+
+#docker build -t mecrunc .
+#docker tag mecrunc levanthanh3005/runc:v0.1
+#docker push levanthanh3005/runc:v0.1

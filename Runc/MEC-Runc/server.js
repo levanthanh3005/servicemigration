@@ -169,7 +169,15 @@ function postCommitFile(fileName, pathPost, callback){
   var filename = "/root/tmp/"+fileName+".tar.gz";
 
   var rs = fs.createReadStream(filename);
-  var ws = request.post(pathPost+"/"+checkpoint);
+  var ws = request.post(pathPost+"/"+fileName, (error, res, body) => {
+    console.log("finish "+ " at "+new Date().getTime());
+    console.log(body)
+    callback({
+      status : 1,
+      serviceName : serviceName,
+      fileName : fileName
+    });
+  });
 
   ws.on('drain', function () {
     console.log('drain', new Date());
@@ -177,13 +185,12 @@ function postCommitFile(fileName, pathPost, callback){
   });
 
   rs.on('end', function () {
-    console.log('uploaded to ' + pathPost);
-    callback({
-      status : 1,
-      serviceName : serviceName,
-      fileName : checkpoint
-    });
+    console.log('end : uploaded to ' + pathPost+ " at "+new Date().getTime());
   });
+
+  // rs.on('close', function () {
+  //   console.log('close at '+new Date().getTime());
+  // });
 
   ws.on('error', function (err) {
     console.error('cannot send file to ' + pathPost + ': ' + err);
@@ -195,6 +202,29 @@ function postCommitFile(fileName, pathPost, callback){
 
   rs.pipe(ws);
 }
+
+app.post('/uploadcheckpoint/:checkpoint', function (req, res) {
+  var checkpoint = path.basename(req.params.checkpoint);
+  //Ref: https://gist.github.com/alepez/9205394
+  filename = path.resolve(__dirname, "/root/tmp/"+checkpoint+".tar.gz");
+
+  var dst = fs.createWriteStream(filename);
+  req.pipe(dst);
+  dst.on('drain', function() {
+    console.log('drain', new Date());
+    req.resume();
+  });
+  req.on('end', function () {
+    console.log("Received a file in "+filename+ " at "+new Date().getTime());
+    res.sendStatus(200);
+  });
+});
+
+app.get('/getContainers', function (req, res) {
+  getRunningContainers(function(containers){
+    res.send(containers);
+  })
+})
 
 function askNeighbourToPrepare(migrationControlPath, serviceName, callback) {
   request.post(migrationControlPath, {
@@ -220,14 +250,22 @@ function askNeighbourToUnzipPredump(migrationControlPath, serviceName, filename,
 }
 
 app.post('/migrationcontrol', function (req, res) {
+  console.log("migrationcontrol at:"+ new Date().getTime());
+  console.log(req.body);
   var movingType = req.body.movingType;
   if (movingType == "predump") {
+    console.log("Start preparing"+req.body.config.serviceName)
     var cmd = "./script/runContainer_Prepare.sh "+req.body.config.DockerImage+" "+req.body.config.serviceName;
     extras.execute(cmd, function(stdout, error) {
       console.log("Done preparing service:"+req.body.config.serviceName)
       var cmd = "./script/unzip_predump.sh "+req.body.config.serviceName+" "+req.body.filename;
       extras.execute(cmd, function(stdout, error) {
         console.log("Done unzip predump:"+req.body.config.serviceName+" "+req.body.filename);
+        res.send({
+          status : 1,
+          description : "predump sent",
+          movingType : movingType
+        });  
       });
     });
   } else if (movingType == "lazypage") {
@@ -235,6 +273,11 @@ app.post('/migrationcontrol', function (req, res) {
     // ./lazyPageRestore.sh videoserver 5000/resume 172.17.0.3
     extras.execute(cmd, function(stdout, error) {
       console.log("Done restore "+req.body.config.serviceName);
+        res.send({
+          status : 1,
+          description : "lazypage done",
+          movingType : movingType
+        });  
     });    
   }
   // if (req.body.cmd == "SERVICEPREPARING") {
@@ -316,12 +359,12 @@ app.post('/migration', function (req, res) {
 
   var makeCheckpoint = function(callback) {
     if (movingType == "predump") {
-      cmd = "./predumpCheckPoint.sh "+serviceName;
+      cmd = "./script/predumpCheckPoint.sh "+serviceName;
       console.log("checkpoint predump_"+serviceName+".tar.gz"); 
       fileName = "predump_"+serviceName;
       // predump_$NAME.tar.gz
     } else if (movingType == "lazypage") {
-      cmd = "./lazyPageCheckpoint.sh "+serviceName+" "+lsService[serviceName].migration.pause;
+      cmd = "./script/lazyPageCheckpoint.sh "+serviceName+" "+lsService[serviceName].migration.pause;
       console.log("checkpoint lazypage checkpoint_"+serviceName+".tar.gz"); 
       fileName = "checkpoint_"+serviceName;
     }
@@ -343,6 +386,7 @@ app.post('/migration', function (req, res) {
 
   makeCheckpoint(function(fileName){
     postCommitFile(fileName,pathPost,function(){
+      console.log("postCommitFile:done:"+migrationControlPath);
       request.post(migrationControlPath, {
         json: {
           movingType : movingType,
@@ -351,36 +395,14 @@ app.post('/migration', function (req, res) {
           newIP: req.body.newIP
         }
       }, (error, respost, body) => {
+        console.log("migration done")
         res.send({
           status : 1,
-          description : "ask neighbour to migrate "
+          description : "ask neighbour to migrate"
         }); 
       })
     });
   });
-})
-
-app.post('/uploadcheckpoint/:checkpoint', function (req, res) {
-  var checkpoint = path.basename(req.params.checkpoint);
-  //Ref: https://gist.github.com/alepez/9205394
-  filename = path.resolve(__dirname, "/root/tmp/"+checkpoint+".tar.gz");
-
-  var dst = fs.createWriteStream(filename);
-  req.pipe(dst);
-  dst.on('drain', function() {
-    console.log('drain', new Date());
-    req.resume();
-  });
-  req.on('end', function () {
-    console.log("Received a file in "+filename);
-    res.sendStatus(200);
-  });
-});
-
-app.get('/getContainers', function (req, res) {
-  getRunningContainers(function(containers){
-    res.send(containers);
-  })
 })
 
 
