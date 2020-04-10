@@ -4,14 +4,12 @@ docker run -it --rm \
 	-t --privileged --rm \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /lib/modules:/lib/modules:ro \
-	-p 5001:5000 \
+	-p 5000:5000 \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
 	-v /home/academic/vanle/containerroots/videoserver:/root/containerroots/videoserver:rw \
 	-v /tmp:/root/tmp:rw \
-	--name servertest \
-	runcdocker
-
-	levanthanh3005/runc:v0.1 bash
+	--name server1 \
+	levanthanh3005/runc:v0.15 bash
 
 docker run -it --rm \
 	-t --privileged --rm \
@@ -480,7 +478,7 @@ docker run -it --rm \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
 	-v /tmp:/root/tmp:rw \
 	--name server1 \
-	levanthanh3005/runc:v0.1 bash
+	levanthanh3005/runc:v0.15 bash
 
 cd /root/containerroots/script
 ./cleanContainer.sh videoserver
@@ -510,7 +508,7 @@ docker run -it --rm \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
 	-v /tmp:/root/tmp:rw \
 	--name server2 \
-	levanthanh3005/runc:v0.1 bash
+	levanthanh3005/runc:v0.15 bash
 
 cd /root/containerroots/script
 ./cleanContainer.sh videoserver

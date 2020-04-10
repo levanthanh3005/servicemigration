@@ -49,7 +49,7 @@ RUN mkdir -p ${ROOTFS}
 #ENTRYPOINT ["/tmpmount"]
 
 RUN apt-get install -y runc
-RUN apt-get install -y vim
+RUN apt-get install -y vim docker.io
 
 RUN mkdir /root/containerroots
 RUN mkdir /root/containerroots/script
