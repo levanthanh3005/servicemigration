@@ -4,11 +4,13 @@ docker run -it --rm \
 	-t --privileged --rm \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /lib/modules:/lib/modules:ro \
-	-p 5000:5000 \
+	-p 5001:5000 \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
 	-v /home/academic/vanle/containerroots/videoserver:/root/containerroots/videoserver:rw \
 	-v /tmp:/root/tmp:rw \
-	--name server1 \
+	--name servertest \
+	runcdocker
+
 	levanthanh3005/runc:v0.1 bash
 
 docker run -it --rm \
@@ -377,6 +379,8 @@ curl http://localhost:5000/testconnection
 -------------------SCRIPT
 cd /root/containerroots/script
 ./cleanContainer.sh videoserver
+pkill criu
+pkill runc
 #./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done before
 ./runContainer.sh videoserver
 ./predumpCheckPoint.sh videoserver
@@ -391,6 +395,311 @@ In server2:
 cd /root/containerroots/script
 ./cleanContainer.sh videoserver
 #./runContainer_Prepare.sh videoserver levanthanh3005/nodecasting:countdown #done before
-./unzip_predump.sh videoserver
-./lazyPageRestore.sh videoserver 5000/resume 172.17.0.3
+./unzip_predump.sh videoserver predump_videoserver
+./lazyPageRestore.sh videoserver checkpoint_videoserver 5000/resume 172.17.0.3
 curl http://10.7.20.89:5003/testconnection
+-------------------SCRIPT22: Pass for local host for the deployed image
+cd /root/containerroots/script
+./cleanContainer.sh videoserver
+pkill criu
+pkill runc
+#./runContainer_Prepare.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver #done before
+./runContainer.sh videoserver
+./predumpCheckPoint.sh videoserver
+#Copy predump
+#play video
+curl http://10.7.20.89:5000/testconnection
+./lazyPageCheckpoint.sh videoserver 5000/pause
+#Copy checkpoint
+
+
+In server2:
+cd /root/containerroots/script
+./cleanContainer.sh videoserver
+#./runContainer_Prepare.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver #done before
+./unzip_predump.sh videoserver predump_videoserver
+./lazyPageRestore.sh videoserver checkpoint_videoserver 5000/resume 172.17.0.3
+curl http://10.7.20.89:5003/testconnection
+
+-------------------SCRIPT221: run the same host but not use --net host
+In server1:
+
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	-p 5000:5000 \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /tmp:/root/tmp:rw \
+	--name server1 \
+	levanthanh3005/runc:v0.1 bash
+
+cd /root/containerroots/script
+./cleanContainer.sh videoserver
+pkill criu
+pkill runc
+./runContainer_Prepare.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver #done before
+cp /root/tmp/config.json /root/containerroots/videoserver/image/
+./runContainer.sh videoserver
+./predumpCheckPoint.sh videoserver
+#Copy predump
+#play video
+curl http://10.7.20.89:5000/testconnection
+./lazyPageCheckpoint.sh videoserver 5000/pause
+#Copy checkpoint
+
+
+In server2:
+
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	-p 5003:5000 \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /tmp:/root/tmp:rw \
+	--name server2 \
+	levanthanh3005/runc:v0.1 bash
+
+cd /root/containerroots/script
+./cleanContainer.sh videoserver
+./runContainer_Prepare.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver #done before
+cp /root/tmp/config.json /root/containerroots/videoserver/image/
+./unzip_predump.sh videoserver predump_videoserver
+./lazyPageRestore.sh videoserver checkpoint_videoserver 5000/resume 172.17.0.3
+curl http://10.7.20.89:5003/testconnection
+
+-------------------SCRIPT221.5: TESTING
+In server1:
+
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	--net host \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /tmp:/root/tmp:rw \
+	--name server1 \
+	levanthanh3005/runc:v0.1 bash
+
+cd /root/containerroots/script
+./cleanContainer.sh videoserver
+pkill criu
+pkill runc
+./runContainer_Prepare.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver #done before
+cp /root/tmp/config.json /root/containerroots/videoserver/image/
+./runContainer.sh videoserver
+./predumpCheckPoint.sh videoserver
+#Copy predump
+#play video
+curl http://10.7.20.89:5000/testconnection
+./lazyPageCheckpoint.sh videoserver 5000/pause
+#Copy checkpoint
+
+scp /tmp/checkpoint_videoserver.tar.gz vanle@10.7.20.104:/tmp/
+scp /tmp/predump_videoserver.tar.gz vanle@10.7.20.104:/tmp/
+scp /tmp/config.json vanle@10.7.20.104:/tmp/
+
+In server2:
+
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	--net host \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /tmp:/root/tmp:rw \
+	--name server2 \
+	levanthanh3005/runc:v0.1 bash
+
+cd /root/containerroots/script
+./cleanContainer.sh videoserver
+pkill criu
+pkill runc
+./runContainer_Prepare.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver #done before
+cp /root/tmp/config.json /root/containerroots/videoserver/image/
+./unzip_predump.sh videoserver predump_videoserver
+./lazyPageRestore.sh videoserver checkpoint_videoserver 5000/resume 10.7.20.89
+curl http://10.7.20.104:5000/testconnection
+
+-------------------SCRIPT222
+In server1:
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	--net host \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /tmp:/root/tmp:rw \
+	--name server1 \
+	levanthanh3005/runc:v0.1 bash
+
+cd /root/containerroots/script
+./cleanContainer.sh videoserver
+pkill criu
+pkill runc
+./runContainer_Prepare.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver #done before
+cp /root/tmp/config.json /root/containerroots/videoserver/image/
+
+./runContainer.sh videoserver
+./predumpCheckPoint.sh videoserver
+#Copy predump
+#play video
+curl http://10.7.20.89:5000/testconnection
+./lazyPageCheckpoint.sh videoserver 5000/pause
+#Copy checkpoint
+
+
+scp /tmp/checkpoint_videoserver.tar.gz vanle@10.7.20.104:/tmp/
+scp /tmp/predump_videoserver.tar.gz vanle@10.7.20.104:/tmp/
+scp /tmp/config.json vanle@10.7.20.104:/tmp/
+
+In server2:
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	--net host \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /tmp:/root/tmp:rw \
+	--name server2 \
+	levanthanh3005/runc:v0.1 bash
+
+cd /root/containerroots/script
+./cleanContainer.sh videoserver
+pkill criu
+pkill runc
+#./runContainer_Prepare.sh levanthanh3005/nodecasting:v0.2.countdown.server videoserver #done before
+cp /root/tmp/config.json /root/containerroots/videoserver/image/
+./unzip_predump.sh videoserver predump_videoserver
+./lazyPageRestore.sh videoserver checkpoint_videoserver 5000/resume 10.7.20.89
+curl http://10.7.20.89:5003/testconnection
+
+-------------------SCRIPT2
+runc delete nodecasting -f
+./script/runContainer.sh nodecasting
+#./script/lazyPageCheckpoint.sh nodecasting 5000/pause
+cd /root/containerroots/nodecasting/image
+runc checkpoint --parent-path ../predump --lazy-pages --status-fd /root/tmp/lazy-pipe --page-server localhost:27 nodecasting
+runc checkpoint --lazy-pages --status-fd /root/tmp/lazy-pipe --page-server localhost:27 nodecasting
+
+#In another tab
+cd /root/containerroots/nodecasting/image
+tar -zcvf /root/tmp/checkpoint_nodecasting.tar.gz checkpoint
+
+#Copy checkpoint
+
+scp /tmp/checkpoint_nodecasting.tar.gz vanle@10.7.20.104:/tmp/
+
+In server2:
+cd /root/containerroots/nodecasting/image
+tar xzvf /root/tmp/checkpoint_nodecasting.tar.gz -C .
+criu lazy-pages --page-server --address 10.7.20.89 --port 27 -D checkpoint -vv
+
+runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages nodecasting
+
+#./script/lazyPageRestore.sh nodecasting checkpoint_nodecasting 5000/resume 10.7.20.89
+#curl http://10.7.20.89:5000/testconnection
+
+
+-------------------SCRIPT: FOR MECRUNC
+cd /todo/script
+./cleanContainer.sh nodecasting
+./runContainer_Prepare.sh nodecasting levanthanh3005/nodecasting:v0.2.countdown.server #done before
+./runContainer.sh nodecasting
+./predumpCheckPoint.sh nodecasting
+#Copy predump
+#play video
+curl http://10.7.20.89:5000/testconnection
+./lazyPageCheckpoint.sh nodecasting 5000/pause
+
+#Copy checkpoint
+
+scp /tmp/checkpoint_nodecasting.tar.gz vanle@10.7.20.104:/tmp/
+scp /tmp/predump_nodecasting.tar.gz vanle@10.7.20.104:/tmp/
+
+In server2:
+cd /todo/script
+./cleanContainer.sh nodecasting
+./runContainer_Prepare.sh nodecasting levanthanh3005/nodecasting:v0.2.countdown.server #done before
+./unzip_predump.sh nodecasting predump_nodecasting
+./lazyPageRestore.sh nodecasting checkpoint_nodecasting 5000/resume 10.7.20.89
+curl http://10.7.20.89:5003/testconnection
+
+
+------------------CHECKING:MECRUNC
+In server1
+cd /todo/script
+./cleanContainer.sh nodecasting
+./runContainer_Prepare.sh levanthanh3005/nodecasting:countdown nodecasting #done before
+pkill criu
+pkill runc
+
+cp /root/tmp/config.json /root/containerroots/nodecasting/image/
+
+cd /root/containerroots/nodecasting && chmod -R 777 *
+rm -rf predump
+cd /root/containerroots/nodecasting/image
+rm -rf checkpoint
+cd /root/containerroots/nodecasting/image
+runc delete nodecasting -f
+runc run -d nodecasting &> /dev/null < /dev/null
+runc checkpoint --pre-dump --image-path ../predump nodecasting
+cd /root/containerroots/nodecasting/
+tar -zcvf /root/tmp/predump_nodecasting.tar.gz predump
+curl http://localhost:5000/testconnection
+
+echo '0' > /root/tmp/lazy-pipe
+
+#Play movie
+startTime=$(($(date +%s%N)/1000000))
+curl http://localhost:5000/pause
+cd /root/containerroots/nodecasting/image
+runc checkpoint --parent-path ../predump --lazy-pages --status-fd /root/tmp/lazy-pipe --page-server localhost:27 nodecasting </dev/null &>/dev/null &
+#while [ ! -f "checkpoint/inventory.img" ]; do echo "wait until inventory exitst"; done
+while [ $(cat /root/tmp/lazy-pipe) -eq "0" ]; do echo "wait lazy page ready"; done
+#sleep 2
+cd /root/containerroots/nodecasting/image
+tar -zcvf /root/tmp/checkpoint_nodecasting.tar.gz checkpoint
+endTime=$(($(date +%s%N)/1000000))
+echo "Spent:"
+expr $endTime - $startTime
+echo "End:",$endTime," Start:",$startTime
+
+#Copy checkpoint
+
+scp /tmp/checkpoint_nodecasting.tar.gz vanle@10.7.20.104:/tmp/
+scp /tmp/predump_nodecasting.tar.gz vanle@10.7.20.104:/tmp/
+scp /tmp/config.json vanle@10.7.20.104:/tmp/
+
+In server2
+cd /todo/script
+./cleanContainer.sh nodecasting
+./runContainer_Prepare.sh levanthanh3005/nodecasting:countdown nodecasting #done before
+pkill criu
+pkill runc
+
+cp /root/tmp/config.json /root/containerroots/nodecasting/image/
+
+cd /root/containerroots/nodecasting && chmod -R 777 *
+runc delete nodecasting -f
+rm -rf predump
+tar xzvf /root/tmp/predump_nodecasting.tar.gz -C .
+cd /root/containerroots/nodecasting/image
+rm -rf checkpoint
+
+startTime=$(($(date +%s%N)/1000000))
+tar xzvf /root/tmp/checkpoint_nodecasting.tar.gz -C .
+cd /root/containerroots/nodecasting/image
+#docker inspect server1
+criu lazy-pages --page-server --address 10.7.20.89 --port 27 -D checkpoint -vv </dev/null &>/dev/null &
+#In another tab of host
+#docker exec -it server2 bash
+#cd /root/containerroots/nodecasting/image
+runc restore -d --work-path checkpoint --image-path checkpoint --lazy-pages nodecasting
+curl http://localhost:5000/resume
+endTime=$(($(date +%s%N)/1000000))
+echo "Spent:"
+expr $endTime - $startTime
+echo "End:",$endTime," Start:",$startTime
+curl http://localhost:5000/testconnection

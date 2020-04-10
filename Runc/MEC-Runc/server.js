@@ -265,10 +265,16 @@ app.post('/migrationcontrol', function (req, res) {
           status : 1,
           description : "predump sent",
           movingType : movingType
-        });  
+        }); 
+
+        extras.convertToJson("/root/containerroots/"+req.body.config.serviceName+"/image",req.body.config,function(){  
+          console.log("Store json file")
+        })
+
       });
     });
   } else if (movingType == "lazypage") {
+    console.log("Start lazypage");
     var cmd = "./script/lazyPageRestore.sh "+req.body.config.serviceName+" "+req.body.filename+" "+req.body.config.migration.resume+" "+req.body.newIp;
     // ./lazyPageRestore.sh videoserver 5000/resume 172.17.0.3
     extras.execute(cmd, function(stdout, error) {
@@ -280,61 +286,7 @@ app.post('/migrationcontrol', function (req, res) {
         });  
     });    
   }
-  // if (req.body.cmd == "SERVICEPREPARING") {
-  //   var cmd = "./script/runContainer_Prepare.sh "+req.body.config.DockerImage+" "+req.body.config.serviceName;
-  //   extras.execute(cmd, function(stdout, error) {
-  //     console.log("Done preparing service:"+req.body.config.serviceName)
-  //   });
-  // } else if (req.body.cmd == "UNZIPPREDUMP") {
-  //   var cmd = "./script/unzip_predump.sh "+req.body.config.serviceName+" "+req.body.filename;
-  //   extras.execute(cmd, function(stdout, error) {
-  //     console.log("Done unzip predump:"+req.body.config.serviceName+" "+req.body.filename);
-  //   });
-  // } else if (req.body.cmd == "LAZYPAGERETORE") {
-  //   var cmd = "./script/lazyPageRestore.sh "+req.body.config.serviceName+" "+req.body.filename+" "+req.body.config.migration.resume+" "+req.body.newIp;
-  //   // ./lazyPageRestore.sh videoserver 5000/resume 172.17.0.3
-  //   extras.execute(cmd, function(stdout, error) {
-  //     console.log("Done restore "+req.body.config.serviceName);
-  //   });
-  // }
 })
-
-// app.post('/predump', function (req, res) {
-  
-//   /*
-//     Post {
-//       serviceName : <serviceName>,
-//       newIP : <newIP>,
-//       pathPost : <pathPost the zip file>,
-//       migrationControlPath : <path>
-//     }
-//   */
-
-//   console.log(req.body);
-//   var serviceName = req.body.serviceName;
-//   var newIP = req.body.newIP;
-//   var pathPost = req.body.pathPost;
-
-//   var predump = "predump_" + new Date().getTime();
-
-//   cmd = "./script/predumpCheckPoint.sh "+serviceName;
-// //     cmd = "docker checkpoint create --leave-running --checkpoint-dir /tmp "+serviceName+" "+checkpoint;
-//   extras.execute(cmd, function(stdout,error) {
-//     console.log("predump for "+serviceName); 
-
-//     if (error !== null) {
-//       res.send({
-//         status : 0,
-//         description : error
-//       });  
-//       return;
-//     }
-//     postCommitFile(predump,function(result){
-//       res.send(result);
-//     });
-
-//   })
-// })
 
 app.post('/migration', function (req, res) {
   

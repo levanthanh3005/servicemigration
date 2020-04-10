@@ -4,10 +4,15 @@ FILENAME=$2
 SERVICERESUME=$3
 SOURCEADDRESS=$4
 
+pkill runc
+pkill criu
+
 ########
 startTime=$(($(date +%s%N)/1000000))
 
 cd $HOME/containerroots/$NAME/image
+
+echo "Unzip file"
 
 tar xzvf /root/tmp/$FILENAME.tar.gz -C .
 

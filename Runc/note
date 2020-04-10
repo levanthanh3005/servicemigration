@@ -21,6 +21,7 @@ docker run -it --rm \
 	-v /lib/modules:/lib/modules:ro \
 	--net host \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc:/todo \
+	-v /tmp/:/root/tmp:rw \
 	-w /todo \
 	-e ORG=Unibz \
 	-e EXTERNALPORT=3005 \
@@ -35,13 +36,14 @@ docker run -it --rm \
 	-v /lib/modules:/lib/modules:ro \
 	--net host \
 	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc:/todo \
+	-v /tmp/:/root/tmp:rw \
 	-w /todo \
 	-e ORG=Unibz \
 	-e EXTERNALPORT=3006 \
 	-e PORT=3006 \
 	-e SMPath=10.7.20.89:3001 \
 	--name MEC2 \
-	mecrunc bash
+	levanthanh3005/runc:mecrunc bash
 
 ------Test:
 

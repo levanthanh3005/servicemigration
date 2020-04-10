@@ -27,5 +27,5 @@ RUN mkdir /root/tmp
 #CMD node server.js
 
 #docker build -t mecrunc .
-#docker tag mecrunc levanthanh3005/runc:v0.1
-#docker push levanthanh3005/runc:v0.1
+#docker tag mecrunc levanthanh3005/runc:mecrunc
+#docker push levanthanh3005/runc:mecrunc
