@@ -18,7 +18,7 @@ pkill criu
 startTime=$(($(date +%s%N)/1000000))
 curl localhost:$SERVICEPAUSE
 cd $HOME/containerroots/$NAME/image
-runc checkpoint --parent-path ../predump --lazy-pages --status-fd /root/tmp/lazy-pipe --page-server localhost:27 $NAME </dev/null &>/dev/null &
+runc checkpoint --parent-path ../predump --lazy-pages --status-fd /root/tmp/lazy-pipe --page-server localhost:27 $NAME &> $HOME/logtmp/lazy-checkpoint-log.out < $HOME/logtmp/lazy-checkpoint-log.err
 # runc checkpoint --parent-path ../predump --lazy-pages --status-fd /root/tmp/lazy-pipe --page-server localhost:27 $NAME <1 &>2 &
 #while [ ! -f "checkpoint/inventory.img" ]; do echo "wait until inventory exitst"; done
 while [ $(wc -c < /root/tmp/lazy-pipe) -eq 2 ]; do echo ""; done

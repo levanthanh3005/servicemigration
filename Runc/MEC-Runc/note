@@ -20,7 +20,7 @@ docker run -it --rm \
 	-v /home/academic/vanle/containerroots/videoserver2:/root/containerroots/videoserver:rw \
 	-v /tmp:/root/tmp:rw \
 	--name server2 \
-	levanthanh3005/runc:v0.1 bash
+	levanthanh3005/runc:v0.15 bash
 
 ------------------PASS
 cd /root/containerroots/videoserver/image
@@ -518,6 +518,74 @@ pkill runc
 cp /root/tmp/config.json /root/containerroots/videoserver/image/
 ./unzip_predump.sh videoserver predump_videoserver
 ./lazyPageRestore.sh videoserver checkpoint_videoserver 5000/resume 10.7.20.89
+curl http://10.7.20.104:5000/testconnection
+
+-------------------SCRIPT221.6: TESTING BUSYBOX
+In server1:
+
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	-p 5000:5000 \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /home/academic/vanle/containerroots:/root/containerroots:rw \
+	-v /tmp:/root/tmp:rw \
+	-v /home/academic/vanle/tmp:/root/logtmp:rw \
+	--name server1 \
+	levanthanh3005/runc:v0.15 bash
+
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	--net host \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /tmp:/root/tmp:rw \
+	--name server1 \
+	levanthanh3005/runc:v0.15 bash
+
+cd /root/containerroots/script
+./cleanContainer.sh busybox
+# x=1; while true; do echo "Welcome $x times"; x=$(( $x + 1 )); sleep 1; done
+# "x=1;", "while", "true;", "do", "echo", "Welcome $x times", "x=$(( $x + 1 ));", "sleep", "1", "done"
+ 
+pkill criu
+pkill runc
+./runContainer_Prepare.sh busybox busybox #done before
+cp /root/tmp/config.json /root/containerroots/busybox/image/
+./runContainer.sh busybox
+./predumpCheckPoint.sh busybox
+#Copy predump
+#play video
+curl http://10.7.20.89:5000/testconnection
+./lazyPageCheckpoint.sh busybox 5000/pause
+#Copy checkpoint
+
+scp /tmp/checkpoint_busybox.tar.gz vanle@10.7.20.104:/tmp/
+scp /tmp/predump_busybox.tar.gz vanle@10.7.20.104:/tmp/
+scp /tmp/config.json vanle@10.7.20.104:/tmp/
+
+In server2:
+
+docker run -it --rm \
+	-t --privileged --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /lib/modules:/lib/modules:ro \
+	--net host \
+	-v /home/academic/vanle/servicemigration/Runc/MEC-Runc/script:/root/containerroots/script \
+	-v /tmp:/root/tmp:rw \
+	--name server2 \
+	levanthanh3005/runc:v0.15 bash
+
+cd /root/containerroots/script
+./cleanContainer.sh busybox
+pkill criu
+pkill runc
+./runContainer_Prepare.sh levanthanh3005/nodecasting:v0.2.countdown.server busybox #done before
+cp /root/tmp/config.json /root/containerroots/busybox/image/
+./unzip_predump.sh busybox predump_busybox
+./lazyPageRestore.sh busybox checkpoint_busybox 5000/resume 10.7.20.89
 curl http://10.7.20.104:5000/testconnection
 
 -------------------SCRIPT222
